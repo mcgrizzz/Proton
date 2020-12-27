@@ -3,8 +3,12 @@ package me.drepic.proton;
 import me.drepic.proton.test.TestProton;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.java.JavaPluginLoader;
+
+import java.io.File;
 
 public class Proton extends JavaPlugin implements Listener {
 
@@ -13,6 +17,11 @@ public class Proton extends JavaPlugin implements Listener {
     private static PluginLogger logger;
 
     private boolean test = false;
+
+    // Required for unit tests
+    protected Proton(JavaPluginLoader loader, PluginDescriptionFile descriptionFile, File dataFolder, File file) {
+        super(loader, descriptionFile, dataFolder, file);
+    }
 
     @Override
     public void onEnable(){
@@ -31,9 +40,9 @@ public class Proton extends JavaPlugin implements Listener {
             if(config.getBoolean("authorization.useAuthorization")){
                 String user = config.getString("authorization.username");
                 String password = config.getString("authorization.password");
-                manager = new ProtonManager(this, name, host, virtualHost, port, user, password); //Create manager
+                manager = new ProtonManager(name, host, virtualHost, port, user, password); //Create manager
             }else{
-                manager = new ProtonManager(this, name, host, virtualHost, port); //Create manager
+                manager = new ProtonManager(name, host, virtualHost, port); //Create manager
             }
 
         } catch (Exception e) {
@@ -44,6 +53,13 @@ public class Proton extends JavaPlugin implements Listener {
 
         if(test){
             getServer().getPluginManager().registerEvents(new TestProton(manager, this), this);
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        if (getProtonManager() != null) {
+            getProtonManager().tearDown();
         }
     }
 
