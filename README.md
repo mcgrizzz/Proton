@@ -57,6 +57,11 @@ Additionally you can broadcast a message to all clients:
         }
     ```
     You can have multiple MessageHandlers for each MessageContext as long as the datatype of the first parameter is the same.
+    
+    MessageHandlers are run synchronously with the Server unless specified otherwise in the annotation.
+    ```
+        @MessageHandler(namespace="MyPlugin", subject="setTime", async=true)
+    ```
 2. Register your MessageHandlers with the ProtocolManager
     ```
         MyHandlers myHandlers = new MyHandlers(); //Any class that you define and contains MessageHandlers
@@ -67,3 +72,4 @@ Additionally you can broadcast a message to all clients:
 ### TODO
 - [x] Implement separate fanout and header exchanges to prevent client side filtering
 - [ ] Implement acknowledgements/message confirmations when enabled in the config
+- [ ] Client groups, instead of client names.
