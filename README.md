@@ -1,18 +1,19 @@
-#Setting up
+# Setting up
 1. [Download](https://www.rabbitmq.com/download.html) the latest version of RabbitMQ for your desired platform
 2. If any of your servers are not on the same local network you must [create a new username and password](https://www.rabbitmq.com/access-control.html#user-management) and enable authorization in the Proton Config.
     * When setting user permissions, use the default virtual host: '/'
     * Alternatively, define a new virtual host and add the corresponding permissions to the user
     * It can be helpful [to enable the webUI for rabbitMQ](https://www.rabbitmq.com/management.html#getting-started) and use that to configure it.
 3. In Proton's config.yml, configure the host and port accordingly. Give each configuration file a different clientName
-4. In your plugin, make sure to list Proton as a dependency. 
-#Using Proton
-###Getting a reference to ProtonManager
+4. In your plugin, make sure to list Proton as a dependency.
+
+# Using Proton
+### Getting a reference to ProtonManager
 This is the class you will use to send messages and register MessageHandlers
 ```
     ProtonManager manager = Proton.getProtonManager();
 ```
-###Sending a message
+### Sending a message
 The syntax is send(namespace, subject, data, to)
 * namespace - A unique identifier to you and/or your plugin
 * subject - A key that further narrows your data type
@@ -32,7 +33,7 @@ Additionally you can broadcast a message to all clients:
     manager.broadcast("MyPlugin", "setTime", ticks);
 ```
 
-###Receiving the corresponding message
+### Receiving the corresponding message
 1. Create a MessageHandler
     In your class create a method with the parameter datatype you're expecting. 
     Annotate it with the namespace and subject
