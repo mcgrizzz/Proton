@@ -9,12 +9,11 @@ import me.drepic.proton.message.MessageHandler;
 import me.drepic.proton.message.MessageSendException;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import sun.plugin2.message.Message;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
 
@@ -37,11 +36,11 @@ public class ProtonManager {
 
     private Gson gson;
 
-    protected ProtonManager(Plugin plugin, String name, String host, String virtualHost, int port) throws Exception {
-        this(plugin, name, host, virtualHost, port, "", "");
+    protected ProtonManager(String name, String host, String virtualHost, int port) throws Exception {
+        this(name, host, virtualHost, port, "", "");
     }
 
-    protected ProtonManager(Plugin plugin, String name, String host, String virtualHost, int port, String username, String password) throws Exception {
+    protected ProtonManager(String name, String host, String virtualHost, int port, String username, String password) throws Exception {
         this.name = name;
         this.id = UUID.randomUUID();
         this.contextClassMap = new HashMap<>();
@@ -144,8 +143,6 @@ public class ProtonManager {
         MessageContext context = new MessageContext(namespace, subject);
         if(this.contextClassMap.containsKey(context) &&
                 !data.getClass().equals(this.contextClassMap.get(context))){
-            System.out.println(this.contextClassMap.get(context));
-            System.out.println(data.getClass());
             throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
         }
 
@@ -278,6 +275,14 @@ public class ProtonManager {
                     }
                 }
             }
+        }
+    }
+
+    protected void tearDown() {
+        try {
+            channel.close();
+            connection.close();
+        } catch (Exception e) {
         }
     }
 

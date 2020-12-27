@@ -13,6 +13,4 @@ public @interface MessageHandler {
     String subject();
     boolean async() default false;
 
-    //TODO optional async
-
 }
