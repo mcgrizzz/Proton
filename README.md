@@ -5,7 +5,7 @@ Proton is different in that it <b>1.</b> <i>creates a simple system for messagin
 Proton is still being actively developed and tested. Your feedback is welcome.
 
 ### What is RabbitMQ?
-RabbitMQ is a queue based messaging broker. In its simplest form, a producer sends a message to a queue, then a consumer consumes that message from the queue. However, RabbitMQ can and usually does support more complex networks than that. Proton acts as an interface between your plugin and the client API for RabbitMQ. RabbitMQ can be hosted easily on your own servers or by a cloud provider. You can read more here.
+RabbitMQ is a queue based messaging broker. In its simplest form, a producer sends a message to a queue, then a consumer consumes that message from the queue. However, RabbitMQ can and usually does support more complex networks than that. Proton acts as an interface between your plugin and the client API for RabbitMQ. RabbitMQ can be hosted easily on your own servers or by a cloud provider. [You can read more here.](https://www.rabbitmq.com/#getstarted)
 
 # Setting up
 1. [Download](https://www.rabbitmq.com/download.html) the latest version of RabbitMQ for your desired platform
