@@ -12,6 +12,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -274,6 +278,23 @@ class ProtonManagerTest {
     }
 
     @Test
+    public void testBroadcast__complicatedData() throws TimeoutException, InterruptedException {
+        ComplicatedData data = new ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a','b','c','d'));
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(ComplicatedData recvData) {
+                waiter.assertEquals(recvData, data);
+                waiter.assertFalse(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+        };
+
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.broadcast(NAMESPACE, SUBJECT, data);
+        waiter.await(1000, 1);
+    }
+
+    @Test
     public void testMultipleHandlers__mismatchDataType() {
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
@@ -290,4 +311,161 @@ class ProtonManagerTest {
                 .hasMessage("MessageContext already has defined data type");
 
     }
+
+    @Test
+    public void testSend__simpleAsyncValid() throws TimeoutException, InterruptedException {
+        String myString = "testSend__simpleAsyncValid";
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv1(String recvStr) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertFalse(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv2(String recvStr, MessageAttributes messageAttributes) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertFalse(Bukkit.isPrimaryThread());
+                waiter.assertEquals(messageAttributes.getSenderName(), CLIENT_2_NAME);
+                waiter.assertEquals(messageAttributes.getSenderID(), client2ProtonManager.getClientID());
+                waiter.assertEquals(messageAttributes.getNamespace(), NAMESPACE);
+                waiter.assertEquals(messageAttributes.getSubject(), SUBJECT);
+                waiter.resume();
+            }
+        };
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
+        waiter.await(1000, 2);
+    }
+
+    @Test
+    public void testSend__simpleSyncValid() throws TimeoutException, InterruptedException {
+        String myString = "testSend__simpleSyncValid";
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
+            public void recv1(String recvStr) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertTrue(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
+            public void recv2(String recvStr) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertTrue(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+        };
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
+        // Wait for sync threads to get added to Bukkit from RabbitMQ
+        Thread.sleep(500);
+        scheduler.performTicks(2);
+        waiter.await(1000, 2);
+    }
+
+    @Test
+    public void testSend__mixedAsync() throws TimeoutException, InterruptedException {
+        String myString = "testSend__mixedAsync";
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
+            public void recv1(String recvStr) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertTrue(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv2(String recvStr) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertFalse(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+        };
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
+        // Wait for sync threads to get added to Bukkit from RabbitMQ
+        Thread.sleep(500);
+        scheduler.performTicks(2);
+        waiter.await(1000, 2);
+    }
+
+    @Test
+    public void testSend__onlyToSender() throws InterruptedException, TimeoutException {
+        String myString = "testSend__onlyToSender";
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(String recvStr) {
+                waiter.assertEquals(recvStr, myString);
+                waiter.assertFalse(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+        };
+        Object client2Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(String recvStr) {
+               waiter.fail("Client2 should not receive a message for client1");
+            }
+        };
+
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.registerMessageHandlers(client2Handler, proton);
+        client1ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
+        Thread.sleep(500);
+        waiter.await(1000, 1);
+    }
+
+    @Test
+    public void testSend__noHandlerInRecipient() {
+        String myString = "testSend__noHandlerInRecipient";
+        client1ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
+    }
+
+    @Test
+    public void testSend__complicatedData() throws TimeoutException, InterruptedException {
+        ComplicatedData data = new ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a','b','c','d'));
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(ComplicatedData recvData) {
+                waiter.assertEquals(recvData, data);
+                waiter.assertFalse(Bukkit.isPrimaryThread());
+                waiter.resume();
+            }
+        };
+
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.send(NAMESPACE, SUBJECT, data, CLIENT_1_NAME);
+        waiter.await(1000, 1);
+    }
+
+
+    class ComplicatedData {
+
+        public int a;
+        public float b;
+        public String c;
+        public List<Character> d;
+
+        public ComplicatedData(int a, float b, String c, List<Character> d) {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ComplicatedData that = (ComplicatedData) o;
+            return a == that.a && Float.compare(that.b, b) == 0 && c.equals(that.c) && d.equals(that.d);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(a, b, c, d);
+        }
+    }
+
 }
