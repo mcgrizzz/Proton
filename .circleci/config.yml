@@ -3,7 +3,28 @@ version: 2.1
 orbs:
   maven: circleci/maven@1.0.3
 
+jobs:
+  compile_save:
+    docker:
+      - image: cimg/openjdk:13.0
+    steps:
+      - checkout
+      - run:
+          command: mvn package -Dmaven.test.skip=true
+      - run:
+          command: mkdir /tmp/artifacts | cp /home/circleci/project/target/*.jar /tmp/artifacts
+      - store_artifacts:
+          path: /tmp/artifacts
+          destination: artifacts
+
 workflows:
-  maven_test:
+  version: 2
+  main:
     jobs:
-      - maven/test # checkout, build, test, and upload test results
+      - maven/test
+      - compile_save:
+          requires:
+            - maven/test
+          filters:
+            branches:
+              only: main
