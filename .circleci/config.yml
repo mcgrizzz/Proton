@@ -4,27 +4,57 @@ orbs:
   maven: circleci/maven@1.0.3
 
 jobs:
-  compile_save:
+  build:
     docker:
-      - image: cimg/openjdk:13.0
+      - image: cimg/openjdk:13.0-node
     steps:
       - checkout
       - run:
           command: mvn package -Dmaven.test.skip=true
       - run:
           command: mkdir /tmp/artifacts | cp /home/circleci/project/target/*.jar /tmp/artifacts
-      - store_artifacts:
-          path: /tmp/artifacts
-          destination: artifacts
+      - run:
+          command: |
+            VERSION=$(mvn -q \
+                          -Dexec.executable=echo \
+                          -Dexec.args='${project.version}' \
+                          --non-recursive \
+                          exec:exec)
+            echo $VERSION > /tmp/artifacts/version.txt
+      - run:
+          command: cat /tmp/artifacts/version.txt
+      - persist_to_workspace:
+          root: /tmp/artifacts
+          paths:
+            - ./*
+
+  release:
+    docker:
+      - image: circleci/golang:latest
+    steps:
+      - attach_workspace:
+          at: ./artifacts
+      - run:
+          command: |
+            echo 'export VERSION=$(cat ./artifacts/version.txt)' >> $BASH_ENV
+      - run:
+          command: echo $VERSION
+      - run:
+          command: go get github.com/tcnksm/ghr
+      - run:
+          command: ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete v${VERSION} ./artifacts/Proton-${VERSION}.jar
 
 workflows:
   version: 2
   main:
     jobs:
       - maven/test
-      - compile_save:
+      - build:
           requires:
             - maven/test
           filters:
-            branches:
-              only: main
+             branches:
+               only: release
+      - release:
+          requires:
+            - build
