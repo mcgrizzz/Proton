@@ -8,6 +8,7 @@ import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageHandler;
 import net.jodah.concurrentunit.Waiter;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.PluginLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -33,11 +35,11 @@ class ProtonManagerTest {
     // ProtonManager Config
     static final String CLIENT_1_NAME = "client1";
     static final String CLIENT_2_NAME = "client2";
-    static final String HOST = "localhost";
-    static final String VIRTUAL_HOST = "/";
+    static final String HOST = System.getenv("RABBIT_HOST");
+    static final String VIRTUAL_HOST = System.getenv("RABBIT_VHOST");
     static final int PORT = 5672;
-    static final String USERNAME = "guest";
-    static final String PASSWORD = "guest";
+    static final String USERNAME = System.getenv("RABBIT_USER");
+    static final String PASSWORD = System.getenv("RABBIT_PASS");
 
     static final String NAMESPACE = "test-namespace";
     static final String SUBJECT = "test-subject";
@@ -52,8 +54,8 @@ class ProtonManagerTest {
     public void setUp() throws Exception {
         ServerMock server = MockBukkit.mock();
         scheduler = server.getScheduler();
-        proton = MockBukkit.load(Proton.class);
-        client1ProtonManager = Proton.getProtonManager();
+        Proton.setPluginLogger(Logger.getLogger("proton"));
+        client1ProtonManager = new ProtonManager(CLIENT_1_NAME, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         client2ProtonManager = new ProtonManager(CLIENT_2_NAME, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         waiter = new Waiter();
     }
