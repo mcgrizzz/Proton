@@ -1,3 +1,12 @@
+# Proton
+Proton is a library which aims to give you a reliable and flexible solution to cross-server messaging. 
+Other methods, such as Plugin Messaging, are either difficult and messy to implement or have restrictions such as the inability to send messages to a server with no active players. 
+Proton is different in that it <b>1.</b> <i>creates a simple system for messaging between servers and</i> <b>2.</b> <i>is robust and versatile enough to where you can implement any messaging need you require.</i>
+Proton is still being actively developed and tested. Your feedback is welcome.
+
+### What is RabbitMQ?
+RabbitMQ is a queue based messaging broker. In its simplest form, a producer sends a message to a queue, then a consumer consumes that message from the queue. However, RabbitMQ can and usually does support more complex networks than that. Proton acts as an interface between your plugin and the client API for RabbitMQ. RabbitMQ can be hosted easily on your own servers or by a cloud provider. You can read more here.
+
 # Setting up
 1. [Download](https://www.rabbitmq.com/download.html) the latest version of RabbitMQ for your desired platform
 2. If any of your servers are not on the same local network you must [create a new username and password](https://www.rabbitmq.com/access-control.html#user-management) and enable authorization in the Proton Config.
@@ -14,7 +23,7 @@ This is the class you will use to send messages and register MessageHandlers
     ProtonManager manager = Proton.getProtonManager();
 ```
 ### Sending a message
-The syntax is send(namespace, subject, data, to)
+You can send a message either through ProtonManager#send() or ProtonManager#broadcast()
 * namespace - A unique identifier to you and/or your plugin
 * subject - A key that further narrows your data type
 * data - The data you're sending. This can be any object that is Json serializable.
@@ -65,7 +74,7 @@ Additionally you can broadcast a message to all clients:
 2. Register your MessageHandlers with the ProtocolManager
     ```
         MyHandlers myHandlers = new MyHandlers(); //Any class that you define and contains MessageHandlers
-        manager.registerMessageHandlers(myHandlers);
+        manager.registerMessageHandlers(myHandlers, plugin);
     ```
    
 
