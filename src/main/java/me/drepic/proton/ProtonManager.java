@@ -3,17 +3,17 @@ package me.drepic.proton;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.rabbitmq.client.*;
+import me.drepic.proton.exception.RegisterMessageHandlerException;
 import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageContext;
 import me.drepic.proton.message.MessageHandler;
-import me.drepic.proton.message.MessageSendException;
+import me.drepic.proton.exception.MessageSendException;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
 
@@ -202,6 +202,7 @@ public class ProtonManager {
     /**
      * Register your message handlers
      * @param object The class instance which holds your annotated MessageHandlers
+     * @throws RegisterMessageHandlerException When trying to register a MessageHandler using the same MessageContext but a different data type
      */
     public void registerMessageHandlers(Object object, Plugin plugin){
         Class<?> klass = object.getClass();
@@ -268,7 +269,7 @@ public class ProtonManager {
                     }
                 }else{
                     if(!this.contextClassMap.get(context).equals(parameterClass)){
-                        Proton.pluginLogger().warning("MessageContext already has defined data type");
+                        throw new RegisterMessageHandlerException("MessageContext already has defined data type");
                     }else{
                         this.messageHandlers.get(context).add(wrappedBiConsumer);
                     }

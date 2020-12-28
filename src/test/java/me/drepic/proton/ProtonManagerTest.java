@@ -3,6 +3,7 @@ package me.drepic.proton;
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.scheduler.BukkitSchedulerMock;
+import me.drepic.proton.exception.RegisterMessageHandlerException;
 import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageHandler;
 import net.jodah.concurrentunit.Waiter;
@@ -284,8 +285,9 @@ class ProtonManagerTest {
             }
         };
 
-        // No exception is raised
-        // TODO: check for exception here if one is added
-        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        assertThatThrownBy(() -> client1ProtonManager.registerMessageHandlers(client1Handler, proton))
+                .isInstanceOf(RegisterMessageHandlerException.class)
+                .hasMessage("MessageContext already has defined data type");
+
     }
 }
