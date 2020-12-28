@@ -1,4 +1,4 @@
-package me.drepic.proton.message;
+package me.drepic.proton.exception;
 
 public class MessageSendException extends RuntimeException {
 
