@@ -252,10 +252,9 @@ public class ProtonManager {
                     };
                 }
 
-                /**Class alternativeParameterClass = null;
                 if(this.primitiveMapping.containsKey(parameterClass)){
-                    alternativeParameterClass = this.primitiveMapping.get(parameterClass);
-                }*/
+                    parameterClass = this.primitiveMapping.get(parameterClass);
+                }
 
                 if(!this.contextClassMap.containsKey(context)){
                     this.contextClassMap.put(context, parameterClass);
