@@ -4,6 +4,11 @@ orbs:
   maven: circleci/maven@1.0.3
 
 jobs:
+  docker:
+    - image: python:3.6.3-jessie
+      auth:
+        username: mydockerhub-user
+        password: $DOCKERHUB_PASSWORD
   store:
     steps:
       - store_artifacts:
