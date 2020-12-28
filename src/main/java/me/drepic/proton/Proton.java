@@ -9,12 +9,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 public class Proton extends JavaPlugin implements Listener {
 
     private static ProtonManager manager;
     private FileConfiguration config;
-    private static PluginLogger logger;
+    private static Logger logger;
 
     private boolean test = false;
 
@@ -63,14 +64,18 @@ public class Proton extends JavaPlugin implements Listener {
         }
     }
 
-    protected static PluginLogger pluginLogger(){
-        return logger;
-    }
-
     /**
      * @return ProtonManager An instance of ProtonManager
      */
     public static ProtonManager getProtonManager(){
         return manager;
+    }
+
+    protected static void setPluginLogger(Logger newLogger){
+        logger = newLogger;
+    }
+
+    protected static Logger pluginLogger(){
+        return logger;
     }
 }
