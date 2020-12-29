@@ -1,3 +1,4 @@
+### [Spigot Page](https://www.spigotmc.org/resources/proton.87159/) | [Examples](https://github.com/mcgrizzz/ProtonExamples) | [JavaDocs](https://mcgrizzz.github.io/ProtonDocs/)
 # Proton
 Proton is a library which aims to give you a reliable and flexible solution to cross-server messaging. 
 Other methods, such as Plugin Messaging, are either difficult and messy to implement or have restrictions such as the inability to send messages to a server with no active players. 
