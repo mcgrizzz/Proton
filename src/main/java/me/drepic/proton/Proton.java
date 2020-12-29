@@ -1,6 +1,5 @@
 package me.drepic.proton;
 
-import me.drepic.proton.test.TestProton;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -16,8 +15,6 @@ public class Proton extends JavaPlugin implements Listener {
     private static ProtonManager manager;
     private FileConfiguration config;
     private static Logger logger;
-
-    private boolean test = false;
 
     // Required for unit tests
     protected Proton(JavaPluginLoader loader, PluginDescriptionFile descriptionFile, File dataFolder, File file) {
@@ -49,11 +46,6 @@ public class Proton extends JavaPlugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-
-        if(test){
-            getServer().getPluginManager().registerEvents(new TestProton(manager, this), this);
         }
     }
 
