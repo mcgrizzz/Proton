@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 public class Proton extends JavaPlugin implements Listener {
 
     private static ProtonManager manager;
-    private FileConfiguration config;
     private static Logger logger;
 
     // Required for unit tests
@@ -26,11 +25,12 @@ public class Proton extends JavaPlugin implements Listener {
 
         logger = new PluginLogger(this);
 
-        config = getConfig();
+        FileConfiguration config = getConfig();
         config.options().copyDefaults(true);
         saveConfig();
 
-        String name = config.getString("clientName");
+        String name = config.getString("identification.clientName");
+        String[] groups = config.getStringList("identification.groups").toArray(new String[0]);
         String host = config.getString("rabbitHost");
         String virtualHost = config.getString("rabbitVirtualHost");
         int port = config.getInt("rabbitPort");
@@ -38,9 +38,9 @@ public class Proton extends JavaPlugin implements Listener {
             if(config.getBoolean("authorization.useAuthorization")){
                 String user = config.getString("authorization.username");
                 String password = config.getString("authorization.password");
-                manager = new ProtonManager(name, host, virtualHost, port, user, password); //Create manager
+                manager = new ProtonManager(name, groups, host, virtualHost, port, user, password); //Create manager
             }else{
-                manager = new ProtonManager(name, host, virtualHost, port); //Create manager
+                manager = new ProtonManager(name, groups, host, virtualHost, port); //Create manager
             }
 
         } catch (Exception e) {

@@ -13,6 +13,7 @@ import org.bukkit.plugin.Plugin;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -23,25 +24,27 @@ import java.util.function.BiConsumer;
  *
  */
 public class ProtonManager {
-    private String name; //What is this client's name (should be unique, if not multiple clients will receive the same message)
-    private UUID id; //Guaranteed unique, used to prevent broadcast to self
+    private final String name; //The name of this client
+    private final String[] groups; //The groups the client belongs to
+    private final UUID id; //Guaranteed unique, used to prevent broadcast to self
 
-    private Map<MessageContext, Class> contextClassMap;
-    private Map<Class, Class> primitiveMapping;
-    private Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
+    private final Map<MessageContext, Class> contextClassMap;
+    private final Map<Class, Class> primitiveMapping;
+    private final Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
 
-    private Connection connection;
-    private Channel channel;
-    private String queueName;
+    private final Connection connection;
+    private final Channel channel;
+    private final String queueName;
 
-    private Gson gson;
+    private final Gson gson;
 
-    protected ProtonManager(String name, String host, String virtualHost, int port) throws Exception {
-        this(name, host, virtualHost, port, "", "");
+    protected ProtonManager(String name, String[] groups, String host, String virtualHost, int port) throws Exception {
+        this(name, groups, host, virtualHost, port, "", "");
     }
 
-    protected ProtonManager(String name, String host, String virtualHost, int port, String username, String password) throws Exception {
+    protected ProtonManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
         this.name = name;
+        this.groups = groups;
         this.id = UUID.randomUUID();
         this.contextClassMap = new HashMap<>();
         this.messageHandlers = new HashMap<>();
@@ -78,8 +81,8 @@ public class ProtonManager {
         Proton.pluginLogger().info(String.format("Connected as '%s' with id:%s\n", this.name, this.id.toString()));
     }
 
-    private void deliverCallback(String consumerTag, Delivery delivery) throws IOException {
-        String msg = new String(delivery.getBody(), "UTF-8");
+    private void deliverCallback(String consumerTag, Delivery delivery) {
+        String msg = new String(delivery.getBody(), StandardCharsets.UTF_8);
 
         String contextString = delivery.getProperties().getHeaders().get("messageContext").toString();
 
@@ -117,21 +120,32 @@ public class ProtonManager {
             });
         }catch(Exception e){
             e.printStackTrace();
-            return;
         }
+    }
+
+    private void bindRecipient(MessageContext context, String recipient) throws IOException {
+        Map<String, Object> headers = new HashMap<>();
+
+        headers.put("x-match", "all");
+        headers.put("recipient", recipient);
+        headers.put("messageContext", context.toContextString());
+
+        channel.queueBind(queueName, "proton.direct", "", headers);
     }
 
     /**
      * Registers the MessageContext with the direct exchange
      */
     private void registerMessageContext(MessageContext context) throws IOException {
+
+        bindRecipient(context, this.name);
+
+        for (String group : this.groups) { //For each group this client belongs to, bind
+            if(group.equals(this.name))continue; //prevent duplicate binding
+            bindRecipient(context, group);
+        }
+
         Map<String, Object> headers = new HashMap<>();
-        headers.put("x-match", "all"); //Match the recipient and the context
-        headers.put("recipient", this.name);
-        headers.put("messageContext", context.toContextString());
-
-        channel.queueBind(queueName, "proton.direct", "", headers);
-
         headers = new HashMap<>();
         headers.put("x-match", "all");
         headers.put("messageContext", context.toContextString());
@@ -147,7 +161,7 @@ public class ProtonManager {
         }
 
         try{
-            byte[] bytes = new Gson().toJson(data).getBytes("UTF-8");
+            byte[] bytes = new Gson().toJson(data).getBytes(StandardCharsets.UTF_8);
 
             Map<String, Object> headers = new HashMap<>();
             headers.put("x-senderName", this.name);
@@ -174,7 +188,7 @@ public class ProtonManager {
      * @param namespace This is the namespace of the message, usually you want to set this to your plugin name or organization
      * @param subject Set this to further define what your message is doing.
      * @param data This is the data you want to send. It must be JSON serializable
-     * @param recipient The client name of the recipient of the message.
+     * @param recipient The client name or group for the recipient(s) of the message.
      * @throws IllegalArgumentException When trying to send the wrong datatype given a defined {@link MessageContext}
      * @throws IllegalArgumentException When trying to send to an empty or null recipient
      * @throws MessageSendException When unable to send the message
@@ -282,7 +296,7 @@ public class ProtonManager {
         try {
             channel.close();
             connection.close();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 
@@ -301,5 +315,15 @@ public class ProtonManager {
     public UUID getClientID(){
         return this.id;
     }
+
+    /**
+     *
+     * @return String This returns the list of groups this client belongs to
+     */
+    public String[] getClientGroups(){
+        return this.groups;
+    }
+
+
 
 }

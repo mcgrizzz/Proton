@@ -1,11 +1,11 @@
 rabbitHost: "localhost"
 rabbitVirtualHost: '/'
 rabbitPort: 5672
-clientName: "client1"
+identification:
+  clientName: "client1"
+  groups: []
 authorization:
   useAuthorization: true
   username: guest
   password: guest
-
-
 
