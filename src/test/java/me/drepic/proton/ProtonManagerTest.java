@@ -8,12 +8,10 @@ import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageHandler;
 import net.jodah.concurrentunit.Waiter;
 import org.bukkit.Bukkit;
-import org.bukkit.plugin.PluginLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -33,8 +31,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class ProtonManagerTest {
     // ProtonManager Config
+    static final String COMMON_GROUP = "commonGroup";
     static final String CLIENT_1_NAME = "client1";
+    static final String CLIENT_1_GROUP = "client1Group";
+    static final String[] CLIENT_1_GROUPS = {COMMON_GROUP, CLIENT_1_GROUP};
     static final String CLIENT_2_NAME = "client2";
+    static final String CLIENT_2_GROUP = "client2Group";
+    static final String[] CLIENT_2_GROUPS = {COMMON_GROUP, CLIENT_2_GROUP};
     static final String HOST = System.getenv("RABBIT_HOST");
     static final String VIRTUAL_HOST = System.getenv("RABBIT_VHOST");
     static final int PORT = 5672;
@@ -55,8 +58,8 @@ class ProtonManagerTest {
         ServerMock server = MockBukkit.mock();
         scheduler = server.getScheduler();
         Proton.setPluginLogger(Logger.getLogger("proton"));
-        client1ProtonManager = new ProtonManager(CLIENT_1_NAME, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
-        client2ProtonManager = new ProtonManager(CLIENT_2_NAME, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        client1ProtonManager = new ProtonManager(CLIENT_1_NAME, CLIENT_1_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        client2ProtonManager = new ProtonManager(CLIENT_2_NAME, CLIENT_2_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         waiter = new Waiter();
     }
 
@@ -150,7 +153,8 @@ class ProtonManagerTest {
     public void testBroadcast__multipleReceivers() throws Exception {
         String myString = "testBroadcast__multipleReceivers";
         String client3Name = "client3";
-        ProtonManager client3ProtonManager = new ProtonManager(client3Name, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        String[] client3Groups = {};
+        ProtonManager client3ProtonManager = new ProtonManager(client3Name, client3Groups, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         Object sharedHandler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(String recvStr) {
@@ -286,7 +290,6 @@ class ProtonManagerTest {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(ComplicatedData recvData) {
                 waiter.assertEquals(recvData, data);
-                waiter.assertFalse(Bukkit.isPrimaryThread());
                 waiter.resume();
             }
         };
@@ -400,7 +403,6 @@ class ProtonManagerTest {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(String recvStr) {
                 waiter.assertEquals(recvStr, myString);
-                waiter.assertFalse(Bukkit.isPrimaryThread());
                 waiter.resume();
             }
         };
@@ -431,13 +433,62 @@ class ProtonManagerTest {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(ComplicatedData recvData) {
                 waiter.assertEquals(recvData, data);
-                waiter.assertFalse(Bukkit.isPrimaryThread());
                 waiter.resume();
             }
         };
 
         client1ProtonManager.registerMessageHandlers(client1Handler, proton);
         client2ProtonManager.send(NAMESPACE, SUBJECT, data, CLIENT_1_NAME);
+        waiter.await(1000, 1);
+    }
+
+    @Test
+    public void testSendGroup__commonGroup() throws TimeoutException, InterruptedException {
+        String myString = "testSendGroup__commonGroup";
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(String recvData) {
+                waiter.assertEquals(recvData, myString);
+                waiter.resume();
+            }
+        };
+
+        Object client2Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(String recvData) {
+                waiter.assertEquals(recvData, myString);
+                waiter.resume();
+            }
+        };
+
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.registerMessageHandlers(client2Handler, proton);
+        client2ProtonManager.send(NAMESPACE, SUBJECT, myString, COMMON_GROUP);
+        waiter.await(1000, 2);
+    }
+
+    @Test
+    public void testSendGroup__differentGroup() throws TimeoutException, InterruptedException {
+        String myString = "testSendGroup__differentGroup";
+        Object client1Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(String recvData) {
+                waiter.assertEquals(recvData, myString);
+                waiter.resume();
+            }
+        };
+
+        Object client2Handler = new Object() {
+            @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
+            public void recv(String recvData) {
+                waiter.fail("Client2 should not receive a message for client1's unique group");
+            }
+        };
+
+        client1ProtonManager.registerMessageHandlers(client1Handler, proton);
+        client2ProtonManager.registerMessageHandlers(client2Handler, proton);
+        client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_GROUP);
+        Thread.sleep(500);
         waiter.await(1000, 1);
     }
 
