@@ -14,4 +14,4 @@ RabbitMQ is a queue based messaging broker. In its simplest form, a producer sen
 ### TODO
 - [x] Implement separate fanout and header exchanges to prevent client side filtering
 - [ ] Implement acknowledgements/message confirmations when enabled in the config
-- [ ] Client groups, instead of client names.
+- [x] Client groups, instead of client names.
