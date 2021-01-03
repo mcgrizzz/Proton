@@ -27,6 +27,8 @@ jobs:
           root: /tmp/artifacts
           paths:
             - ./*
+      - store_artifacts:
+          path: /tmp/artifacts
 
   release:
     docker:
@@ -54,7 +56,13 @@ workflows:
             - maven/test
           filters:
              branches:
-               only: release
+               only:
+                - release
+                - mcgrizzz/ci-settings
       - release:
           requires:
             - build
+          filters:
+            branches:
+              only:
+                - release
