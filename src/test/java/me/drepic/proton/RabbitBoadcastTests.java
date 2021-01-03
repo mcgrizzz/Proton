@@ -96,7 +96,7 @@ class RabbitBroadcastTests extends RabbitTests {
         String myString = "testBroadcast__multipleReceivers";
         String client3Name = "client3";
         String[] client3Groups = {};
-        ProtonManager client3ProtonManager = new ProtonManager(client3Name, client3Groups, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        ProtonManager client3ProtonManager = createManager(client3Name, client3Groups, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         Object sharedHandler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(String recvStr) {

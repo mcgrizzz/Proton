@@ -2,7 +2,6 @@ package me.drepic.proton;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
-import com.rabbitmq.client.*;
 import me.drepic.proton.exception.RegisterMessageHandlerException;
 import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageContext;
@@ -15,7 +14,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
+import java.util.logging.Logger;
 
 
 /**
@@ -23,26 +24,18 @@ import java.util.function.BiConsumer;
  * @author Drepic
  *
  */
-public class ProtonManager {
-    private final String name; //The name of this client
-    private final String[] groups; //The groups the client belongs to
-    private final UUID id; //Guaranteed unique, used to prevent broadcast to self
+public abstract class ProtonManager {
+    protected final String name; //The name of this client
+    protected final String[] groups; //The groups the client belongs to
+    protected final UUID id; //Guaranteed unique, used to prevent broadcast to self
 
-    private final Map<MessageContext, Class> contextClassMap;
-    private final Map<Class, Class> primitiveMapping;
-    private final Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
+    protected final Map<MessageContext, Class> contextClassMap;
+    protected final Map<Class, Class> primitiveMapping;
+    protected final Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
 
-    private final Connection connection;
-    private final Channel channel;
-    private final String queueName;
+    protected final Gson gson;
 
-    private final Gson gson;
-
-    protected ProtonManager(String name, String[] groups, String host, String virtualHost, int port) throws Exception {
-        this(name, groups, host, virtualHost, port, "", "");
-    }
-
-    protected ProtonManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
+    protected ProtonManager(String name, String[] groups) throws Exception {
         this.name = name;
         this.groups = groups;
         this.id = UUID.randomUUID();
@@ -59,78 +52,6 @@ public class ProtonManager {
                 .put(Character.TYPE, Character.class).build();
 
         gson = new Gson();
-
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(host);
-        factory.setPort(port);
-        factory.setVirtualHost(virtualHost);
-
-        if(!username.isEmpty()){
-            factory.setUsername(username);
-            factory.setPassword(password);
-        }
-
-        connection = factory.newConnection();
-        channel = connection.createChannel();
-        channel.exchangeDeclare("proton.broadcast", "headers");
-        channel.exchangeDeclare("proton.direct", "headers");
-
-        queueName = channel.queueDeclare().getQueue();
-        channel.basicConsume(queueName, true, this::deliverCallback, consumerTag -> {});
-
-        Proton.pluginLogger().info(String.format("Connected as '%s' with id:%s\n", this.name, this.id.toString()));
-    }
-
-    private void deliverCallback(String consumerTag, Delivery delivery) {
-        String msg = new String(delivery.getBody(), StandardCharsets.UTF_8);
-
-        String contextString = delivery.getProperties().getHeaders().get("messageContext").toString();
-
-        MessageContext context;
-        try{
-            context = MessageContext.fromString(contextString);
-        }catch(Exception e){
-            Proton.pluginLogger().warning(String.format("Unable to parse namespace and subject from given MessageContext: %s.", contextString));
-            return;
-        }
-
-        String recipient = delivery.getProperties().getHeaders().get("recipient").toString();
-        String senderName = delivery.getProperties().getHeaders().get("x-senderName").toString();
-        UUID senderID = UUID.fromString(delivery.getProperties().getHeaders().get("x-senderID").toString());
-
-        if(senderID.equals(this.id) && recipient.isEmpty()){ //Implies this was a broadcast from us. Ignore
-            return;                                          //Conversely, we don't want to ignore messages we
-        }                                                    //purposefully sent ourself
-
-        if(!this.contextClassMap.containsKey(context)){ //Someone sent something to us that we're not listening for
-            Proton.pluginLogger().warning("Received message that has no registered handlers.");
-            return;
-        }
-
-        Class type = this.contextClassMap.get(context);
-        try{
-            Object body = gson.fromJson(msg, type);
-            MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
-            this.messageHandlers.get(context).forEach((biConsumer) -> {
-                try{
-                    biConsumer.accept(body, messageAttributes);
-                }catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    private void bindRecipient(MessageContext context, String recipient) throws IOException {
-        Map<String, Object> headers = new HashMap<>();
-
-        headers.put("x-match", "all");
-        headers.put("recipient", recipient);
-        headers.put("messageContext", context.toContextString());
-
-        channel.queueBind(queueName, "proton.direct", "", headers);
     }
 
     /**
@@ -138,19 +59,14 @@ public class ProtonManager {
      */
     private void registerMessageContext(MessageContext context) throws IOException {
 
-        bindRecipient(context, this.name);
+        this.bindRecipient(context, this.name);
 
         for (String group : this.groups) { //For each group this client belongs to, bind
             if(group.equals(this.name))continue; //prevent duplicate binding
-            bindRecipient(context, group);
+            this.bindRecipient(context, group);
         }
 
-        Map<String, Object> headers = new HashMap<>();
-        headers = new HashMap<>();
-        headers.put("x-match", "all");
-        headers.put("messageContext", context.toContextString());
-
-        channel.queueBind(queueName, "proton.broadcast", "", headers);
+        this.bindBroadcast(context);
     }
 
     private void internalSend(String namespace, String subject, Object data, Optional<String> recipient) {
@@ -161,25 +77,18 @@ public class ProtonManager {
         }
 
         try{
-            byte[] bytes = new Gson().toJson(data).getBytes(StandardCharsets.UTF_8);
+            byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
 
-            Map<String, Object> headers = new HashMap<>();
-            headers.put("x-senderName", this.name);
-            headers.put("x-senderID", this.id.toString());
-            headers.put("recipient", recipient.orElse(""));
-            headers.put("messageContext", context.toContextString());
-
-            AMQP.BasicProperties.Builder propBuilder = new AMQP.BasicProperties.Builder();
             if(!recipient.isPresent()){
-                channel.basicPublish("proton.broadcast", "", propBuilder.headers(headers).build(), bytes);
+                this.broadcast(this.name, this.id, context.toContextString(), bytes);
             }else{
-                channel.basicPublish("proton.direct", context.toContextString(), propBuilder.headers(headers).build(), bytes);
+                this.send(this.name, this.id, recipient.orElse(""), context.toContextString(), bytes);
             }
+
         }catch(Exception e){
             throw new MessageSendException(e);
         }
     }
-
 
     /**
      * Send a message to a specific client with a given namespace and subject.
@@ -292,12 +201,8 @@ public class ProtonManager {
         }
     }
 
-    protected void tearDown() {
-        try {
-            channel.close();
-            connection.close();
-        } catch (Exception ignored) {
-        }
+    protected Logger getLogger(){
+        return Proton.pluginLogger();
     }
 
     /**
@@ -324,6 +229,15 @@ public class ProtonManager {
         return this.groups;
     }
 
+    protected abstract void connect() throws IOException, TimeoutException;
 
+    protected abstract void send(String sender, UUID senderID, String recipient, String messageContext, byte[] data) throws IOException;
 
+    protected abstract void broadcast(String sender, UUID senderID, String messageContext, byte[] data) throws IOException;
+
+    protected abstract void bindRecipient(MessageContext context, String recipient) throws IOException;
+
+    protected abstract void bindBroadcast(MessageContext context) throws IOException;
+
+    protected abstract void tearDown();
 }

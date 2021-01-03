@@ -4,18 +4,15 @@ import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.scheduler.BukkitSchedulerMock;
 import me.drepic.proton.exception.RegisterMessageHandlerException;
-import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageHandler;
+import me.drepic.proton.managers.RabbitManager;
 import net.jodah.concurrentunit.Waiter;
-import org.bukkit.Bukkit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,13 +50,18 @@ class RabbitTests {
     BukkitSchedulerMock scheduler;
     Waiter waiter;
 
+    public ProtonManager createManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
+        System.out.println(username);
+        return new RabbitManager(name, groups, host, virtualHost, port, username, password);
+    }
+
     @BeforeEach
     public void setUp() throws Exception {
         ServerMock server = MockBukkit.mock();
         scheduler = server.getScheduler();
         Proton.setPluginLogger(Logger.getLogger("proton"));
-        client1ProtonManager = new ProtonManager(CLIENT_1_NAME, CLIENT_1_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
-        client2ProtonManager = new ProtonManager(CLIENT_2_NAME, CLIENT_2_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        client1ProtonManager = createManager(CLIENT_1_NAME, CLIENT_1_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        client2ProtonManager = createManager(CLIENT_2_NAME, CLIENT_2_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         waiter = new Waiter();
     }
 

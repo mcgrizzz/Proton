@@ -1,5 +1,6 @@
 package me.drepic.proton;
 
+import me.drepic.proton.managers.RabbitManager;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
@@ -37,15 +38,16 @@ public class Proton extends JavaPlugin implements Listener {
         String host = config.getString("rabbitHost");
         String virtualHost = config.getString("rabbitVirtualHost");
         int port = config.getInt("rabbitPort");
+
+
         try {
             if(config.getBoolean("authorization.useAuthorization")){
                 String user = config.getString("authorization.username");
                 String password = config.getString("authorization.password");
-                manager = new ProtonManager(name, groups, host, virtualHost, port, user, password); //Create manager
+                manager = new RabbitManager(name, groups, host, virtualHost, port, user, password);
             }else{
-                manager = new ProtonManager(name, groups, host, virtualHost, port); //Create manager
+                manager = new RabbitManager(name, groups, host, virtualHost, port, "", "");
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
