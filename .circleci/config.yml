@@ -48,10 +48,10 @@ workflows:
   version: 2
   main:
     jobs:
-      - maven/test
+      - maven/parallel_test
       - build:
           requires:
-            - maven/test
+            - maven/parallel_test
           filters:
              branches:
                only: release
