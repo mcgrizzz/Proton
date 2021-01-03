@@ -8,4 +8,5 @@ authorization:
   useAuthorization: true
   username: guest
   password: guest
+bStatsEnabled: true
 
