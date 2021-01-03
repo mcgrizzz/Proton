@@ -1,5 +1,6 @@
 package me.drepic.proton;
 
+import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -14,6 +15,8 @@ public class Proton extends JavaPlugin implements Listener {
 
     private static ProtonManager manager;
     private static Logger logger;
+
+    private static final int BSTATS_PLUGIN_ID = 9866;
 
     // Required for unit tests
     protected Proton(JavaPluginLoader loader, PluginDescriptionFile descriptionFile, File dataFolder, File file) {
@@ -46,6 +49,12 @@ public class Proton extends JavaPlugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
+        }
+
+        boolean bStats = config.getBoolean("bStatsEnabled");
+
+        if(bStats){
+            Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
         }
     }
 
