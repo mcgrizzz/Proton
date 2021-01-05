@@ -2,3 +2,4 @@ target
 out
 .idea
 Proton.iml
+dependency-reduced-pom.xml

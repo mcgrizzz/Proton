@@ -6,7 +6,7 @@
 
     <groupId>me.drepic</groupId>
     <artifactId>Proton</artifactId>
-    <version>1.0.4</version>
+    <version>1.1.0</version>
     <build>
         <plugins>
             <plugin>
@@ -90,13 +90,13 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
+            <version>5.7.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>RELEASE</version>
+            <version>5.7.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
