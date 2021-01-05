@@ -10,7 +10,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class RabbitBroadcastTests extends RabbitTests {
+public class RedisBroadcastTests extends RedisTests {
 
     @Test
     public void testBroadcast__simpleAsyncValid() throws TimeoutException, InterruptedException {
@@ -96,7 +96,7 @@ class RabbitBroadcastTests extends RabbitTests {
         String myString = "testBroadcast__multipleReceivers";
         String client3Name = "client3";
         String[] client3Groups = {};
-        ProtonManager client3ProtonManager = createManager(client3Name, client3Groups, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        ProtonManager client3ProtonManager = createManager(client3Name, client3Groups);
         Object sharedHandler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(String recvStr) {
@@ -227,10 +227,10 @@ class RabbitBroadcastTests extends RabbitTests {
 
     @Test
     public void testBroadcast__complicatedData() throws TimeoutException, InterruptedException {
-        ComplicatedData data = new ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a', 'b', 'c', 'd'));
+        RabbitTests.ComplicatedData data = new RabbitTests.ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a', 'b', 'c', 'd'));
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
-            public void recv(ComplicatedData recvData) {
+            public void recv(RabbitTests.ComplicatedData recvData) {
                 waiter.assertEquals(recvData, data);
                 waiter.resume();
             }

@@ -1,7 +1,6 @@
-package me.drepic.proton.managers;
+package me.drepic.proton;
 
 import com.rabbitmq.client.*;
-import me.drepic.proton.ProtonManager;
 import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageContext;
 
@@ -12,7 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-public class RabbitManager extends ProtonManager {
+public class RabbitMQManager extends ProtonManager {
 
     private Connection connection;
     private Channel channel;
@@ -24,7 +23,7 @@ public class RabbitManager extends ProtonManager {
     private final String username;
     private final String password;
 
-    public RabbitManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
+     RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
         super(name, groups);
         this.host = host;
         this.virtualHost = virtualHost;
@@ -34,7 +33,12 @@ public class RabbitManager extends ProtonManager {
         this.connect();
     }
 
-    public void connect() throws IOException, TimeoutException {
+    RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port) throws Exception {
+        this(name, groups, host, virtualHost, port, "", "");
+    }
+
+    @Override
+    protected void connect() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(host);
         factory.setPort(port);
@@ -56,7 +60,7 @@ public class RabbitManager extends ProtonManager {
         getLogger().info(String.format("Connected as '%s' with id:%s\n", this.name, this.id.toString()));
     }
 
-    private void deliverCallback(String consumerTag, Delivery delivery) {
+    protected void deliverCallback(String consumerTag, Delivery delivery) {
         String msg = new String(delivery.getBody(), StandardCharsets.UTF_8);
         String contextString = delivery.getProperties().getHeaders().get("messageContext").toString();
         MessageContext context;
@@ -96,7 +100,8 @@ public class RabbitManager extends ProtonManager {
         }
     }
 
-    public void bindRecipient(MessageContext context, String recipient) throws IOException {
+    @Override
+    protected void bindRecipient(MessageContext context, String recipient) throws IOException {
         Map<String, Object> headers = new HashMap<>();
 
         headers.put("x-match", "all");
@@ -106,7 +111,8 @@ public class RabbitManager extends ProtonManager {
         channel.queueBind(queueName, "proton.direct", "", headers);
     }
 
-    public void bindBroadcast(MessageContext context) throws IOException {
+    @Override
+    protected void bindBroadcast(MessageContext context) throws IOException {
         Map<String, Object> headers = new HashMap<>();
         headers.put("x-match", "all");
         headers.put("messageContext", context.toContextString());
@@ -114,18 +120,20 @@ public class RabbitManager extends ProtonManager {
         channel.queueBind(queueName, "proton.broadcast", "", headers);
     }
 
-    public void send(String sender, UUID senderID, String recipient, String messageContext, byte[] data) throws IOException {
+    @Override
+    protected void sendData(String sender, UUID senderID, String recipient, MessageContext context, byte[] data) throws IOException {
         Map<String, Object> headers = new HashMap<>();
         AMQP.BasicProperties.Builder propBuilder = new AMQP.BasicProperties.Builder();
 
         headers.put("x-senderName", sender);
         headers.put("x-senderID", senderID.toString());
         headers.put("recipient", recipient);
-        headers.put("messageContext", messageContext);
+        headers.put("messageContext", context.toContextString());
         channel.basicPublish("proton.direct", "", propBuilder.headers(headers).build(), data);
     }
 
-    public void broadcast(String sender, UUID senderID, String messageContext, byte[] data) throws IOException {
+    @Override
+    protected void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) throws IOException {
 
         Map<String, Object> headers = new HashMap<>();
         AMQP.BasicProperties.Builder propBuilder = new AMQP.BasicProperties.Builder();
@@ -133,11 +141,12 @@ public class RabbitManager extends ProtonManager {
         headers.put("x-senderName", sender);
         headers.put("x-senderID", senderID.toString());
         headers.put("recipient", "");
-        headers.put("messageContext", messageContext);
+        headers.put("messageContext", context.toContextString());
         channel.basicPublish("proton.broadcast", "", propBuilder.headers(headers).build(), data);
     }
 
-    public void tearDown() {
+    @Override
+    protected void tearDown() {
         try {
             channel.close();
             connection.close();

@@ -2,11 +2,11 @@ package me.drepic.proton;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import me.drepic.proton.exception.MessageSendException;
 import me.drepic.proton.exception.RegisterMessageHandlerException;
 import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageContext;
 import me.drepic.proton.message.MessageHandler;
-import me.drepic.proton.exception.MessageSendException;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
@@ -69,27 +68,6 @@ public abstract class ProtonManager {
         this.bindBroadcast(context);
     }
 
-    private void internalSend(String namespace, String subject, Object data, Optional<String> recipient) {
-        MessageContext context = new MessageContext(namespace, subject);
-        if(this.contextClassMap.containsKey(context) &&
-                !data.getClass().equals(this.contextClassMap.get(context))){
-            throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
-        }
-
-        try{
-            byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
-
-            if(!recipient.isPresent()){
-                this.broadcast(this.name, this.id, context.toContextString(), bytes);
-            }else{
-                this.send(this.name, this.id, recipient.orElse(""), context.toContextString(), bytes);
-            }
-
-        }catch(Exception e){
-            throw new MessageSendException(e);
-        }
-    }
-
     /**
      * Send a message to a specific client with a given namespace and subject.
      * <br><b>NOTE: </b>The namespace and subject together are mapped to just one data type.
@@ -106,7 +84,19 @@ public abstract class ProtonManager {
         if(recipient == null || recipient.isEmpty()){
             throw new IllegalArgumentException("Recipient cannot be null or empty");
         }
-        this.internalSend(namespace, subject, data, Optional.of(recipient));
+
+        MessageContext context = new MessageContext(namespace, subject);
+        if(this.contextClassMap.containsKey(context) &&
+                !data.getClass().equals(this.contextClassMap.get(context))){
+            throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
+        }
+
+        try{
+            byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
+            this.sendData(this.name, this.id, recipient, context, bytes);
+        }catch(Exception e){
+            throw new MessageSendException(e);
+        }
     }
 
     /**
@@ -119,15 +109,32 @@ public abstract class ProtonManager {
      * @throws MessageSendException When unable to send the message
      */
     public void broadcast(String namespace, String subject, Object data) {
-       this.internalSend(namespace, subject, data, Optional.empty());
+        MessageContext context = new MessageContext(namespace, subject);
+        if(this.contextClassMap.containsKey(context) &&
+                !data.getClass().equals(this.contextClassMap.get(context))){
+            throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
+        }
+
+        try{
+            byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
+            this.broadcastData(this.name, this.id, context, bytes);
+        }catch(Exception e){
+            throw new MessageSendException(e);
+        }
     }
 
     /**
      * Register your message handlers
-     * @param object The class instance which holds your annotated MessageHandlers
+     * @param objects The class(s) which hold your annotated MessageHandlers
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler using the same MessageContext but a different data type
      */
-    public void registerMessageHandlers(Object object, Plugin plugin){
+    public void registerMessageHandlers(Plugin plugin, Object... objects){
+        for(Object obj : objects){
+            registerMessageHandler(plugin, obj);
+        }
+    }
+
+    private void registerMessageHandler(Plugin plugin, Object object){
         Class<?> klass = object.getClass();
         for(final Method method : klass.getDeclaredMethods()){
             if(method.isAnnotationPresent(MessageHandler.class)){
@@ -229,11 +236,11 @@ public abstract class ProtonManager {
         return this.groups;
     }
 
-    protected abstract void connect() throws IOException, TimeoutException;
+    protected abstract void connect() throws Exception;
 
-    protected abstract void send(String sender, UUID senderID, String recipient, String messageContext, byte[] data) throws IOException;
+    protected abstract void sendData(String sender, UUID senderID, String recipient, MessageContext context, byte[] data) throws IOException;
 
-    protected abstract void broadcast(String sender, UUID senderID, String messageContext, byte[] data) throws IOException;
+    protected abstract void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) throws IOException;
 
     protected abstract void bindRecipient(MessageContext context, String recipient) throws IOException;
 

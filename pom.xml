@@ -20,9 +20,6 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
-                <configuration>
-                    <parallel>methods</parallel>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -70,6 +67,12 @@
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
             <version>5.10.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>6.0.1.RELEASE</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
