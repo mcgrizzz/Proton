@@ -26,7 +26,7 @@ public class RedisManager extends ProtonManager {
     StatefulRedisPubSubConnection<String, String> subConnection;
     StatefulRedisPubSubConnection<String, String> pubConnection;
 
-    protected RedisManager(String name, String[] groups, String host, int port, String password) throws Exception {
+    protected RedisManager(String name, String[] groups, String host, int port, String password) {
         super(name, groups);
         this.host = host;
         this.port = port;
@@ -34,7 +34,7 @@ public class RedisManager extends ProtonManager {
         connect();
     }
 
-    protected RedisManager(String name, String[] groups, String host, int port) throws Exception {
+    protected RedisManager(String name, String[] groups, String host, int port) {
         this(name, groups, host, port, "");
     }
 

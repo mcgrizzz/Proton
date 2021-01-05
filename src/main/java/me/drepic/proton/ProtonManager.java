@@ -34,7 +34,7 @@ public abstract class ProtonManager {
 
     protected final Gson gson;
 
-    protected ProtonManager(String name, String[] groups) throws Exception {
+    protected ProtonManager(String name, String[] groups) {
         this.name = name;
         this.groups = groups;
         this.id = UUID.randomUUID();

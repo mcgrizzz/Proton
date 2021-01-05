@@ -35,35 +35,69 @@ Before integrating with Proton, you should configure your servers' Proton config
 Let's take a look at the config. 
 
 ```YAML
-rabbitHost: "localhost"
-rabbitVirtualHost: '/'
-rabbitPort: 5672
-identification:
-    clientName: "client1"
-    groups: []
-authorization:
+rabbitMQ:
+  useRabbitMQ: true
+  host: "localhost"
+  virtualHost: '/'
+  port: 5672
+  authorization:
     useAuthorization: true
     username: guest
     password: guest
+redis:
+  useRedis: false
+  host: "localhost"
+  port: 6379
+  usePassword: true
+  password: "password"
+identification:
+  clientName: "client1"
+  groups: []
 bStatsEnabled: true
 ```
 
-There's a lot of options here, but lets look at them in smaller pieces. 
+There's a lot of options here, but let's look at them in smaller pieces. 
 
-These first three values are mostly simple. `rabbitHost` is the ip of your RabbitMQ instance. `rabbitPort`
-is its port which you will probably not need to change. Lastly, `rabbitVirtualHost` is the virtual host which you can think of as an extension of the host. If you want to learn more about this [there's a great writeup here](https://www.rabbitmq.com/vhosts.html).  
+The first section is for the configuration of RabbitMQ.
+
+`useRabbitMQ` sets whether Proton will try to use RabbitMQ
+`host` is the ip of your RabbitMQ instance.  
+`port` is its port which you will probably not need to change.  
+`virtualHost` is the virtual host which you can think of as an extension of the host. If you want to learn more about this [there's a great writeup here](https://www.rabbitmq.com/vhosts.html).    
+`useAuthorization` sets whether Proton should try to authorize the connection  
+`username` is the username for the connection  
+`password` is the password for the connection
 ```YAML
-rabbitHost: "localhost"
-rabbitVirtualHost: '/'
-rabbitPort: 5672
+rabbitMQ:
+  useRabbitMQ: true
+  host: "localhost"
+  virtualHost: '/'
+  port: 5672
+  authorization:
+    useAuthorization: true
+    username: guest
+    password: guest
 ```
-Then we have the other values you will need to use to connect to RabbitMQ. `useAuthorization` is set to true by default. I would not recommend changing it unless you're developing locally. `username` and `password` are both 'guest' by default, but when you change them, those values will be defined here. 
+
+Next we have the `Redis` section of the config.
+
+`useRedis` sets whether Proton will try to use Redis. (NOTE: If both Rabbit and Redis are set to be used, it will default to RabbitMQ)  
+`host` is the ip of your Redis instance.  
+`port` is its port  
+`usePassword` sets whether Proton will try to use a password for the connection    
+`useAuthorization` is the password Proton will try to use.  
+`username` is the username for the connection  
+`password` is the password for the connection
+
 ```YAML
-authorization:
-  useAuthorization: true
-  username: guest
-  password: guest
+redis:
+  useRedis: false
+  host: "localhost"
+  port: 6379
+  usePassword: true
+  password: "password"
 ```
+
 
 Lastly, we have the `identification` section of the config. This is what Proton uses to know which servers are which. 
 
@@ -189,9 +223,15 @@ The final step to actual receive any messages, is to register your `MessageHandl
 public void onEnable() {
     this.protonManager = Proton.getProtonManager();
     if(this.protonManager != null){
-        this.protonManager.registerMessageHandlers(new MyClass(), this);   
+        this.protonManager.registerMessageHandlers(this, new MyClass());   
     }
 }
+```
+
+If you want, you can register all of your handlers in one call.
+
+```Java
+this.protonManager.registerMessageHandlers(this, handler1, handler2, handler3...);
 ```
 
 If you have any lingering questions, feel free to consult [the examples repo](https://github.com/mcgrizzz/ProtonExamples). You can also submit `question` issue on this repo. 

@@ -9,6 +9,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Proton extends JavaPlugin implements Listener {
@@ -32,30 +35,60 @@ public class Proton extends JavaPlugin implements Listener {
         config.options().copyDefaults(true);
         saveConfig();
 
-        String name = config.getString("identification.clientName");
+        String clientName = config.getString("identification.clientName");
         String[] groups = config.getStringList("identification.groups").toArray(new String[0]);
-        String host = config.getString("rabbitHost");
-        String virtualHost = config.getString("rabbitVirtualHost");
-        int port = config.getInt("rabbitPort");
 
-
-        try {
-            if(config.getBoolean("authorization.useAuthorization")){
-                String user = config.getString("authorization.username");
-                String password = config.getString("authorization.password");
-                manager = new RabbitMQManager(name, groups, host, virtualHost, port, user, password);
-            }else{
-                manager = new RabbitMQManager(name, groups, host, virtualHost, port);
+        boolean useRabbitMQ = config.getBoolean("rabbitMQ.useRabbitMQ");
+        boolean useRedis = config.getBoolean("redis.useRedis");
+        if(useRabbitMQ){
+            try {
+                setupRabbitMQ(clientName, groups);
+            } catch (IOException | TimeoutException e) {
+                e.printStackTrace();
+                getServer().getPluginManager().disablePlugin(this);
+                return;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }else if(useRedis){
+            setupRedis(clientName, groups);
+        }else{
+            logger.log(Level.INFO, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
             getServer().getPluginManager().disablePlugin(this);
+            return;
         }
 
         boolean bStats = config.getBoolean("bStatsEnabled");
 
         if(bStats){
-            Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
+            new Metrics(this, BSTATS_PLUGIN_ID);
+        }
+    }
+
+    private void setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
+
+        String host = getConfig().getString("rabbitMQ.host");
+        String virtualHost = getConfig().getString("rabbitMQ.virtualHost");
+        int port = getConfig().getInt("rabbitMQ.port");
+        boolean useAuthorization = getConfig().getBoolean("rabbitMQ.authorization.useAuthorization");
+
+        if(!useAuthorization){
+            manager = new RabbitMQManager(clientName, groups, host, virtualHost, port);
+        }else{
+            String username = getConfig().getString("rabbitMQ.authorization.username");
+            String password = getConfig().getString("rabbitMQ.authorization.password");
+            manager = new RabbitMQManager(clientName, groups, host, virtualHost, port, username, password);
+        }
+    }
+
+    private void setupRedis(String clientName, String[] groups){
+        String host = getConfig().getString("redis.host");
+        int port = getConfig().getInt("redis.port");
+        boolean usePassword = getConfig().getBoolean("redis.usePassword");
+
+        if(!usePassword){
+            manager = new RedisManager(clientName, groups, host, port);
+        }else{
+            String password = getConfig().getString("redis.password");
+            manager = new RedisManager(clientName, groups, host, port, password);
         }
     }
 

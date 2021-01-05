@@ -23,7 +23,7 @@ public class RabbitMQManager extends ProtonManager {
     private final String username;
     private final String password;
 
-     RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
+     RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
         super(name, groups);
         this.host = host;
         this.virtualHost = virtualHost;
@@ -33,7 +33,7 @@ public class RabbitMQManager extends ProtonManager {
         this.connect();
     }
 
-    RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port) throws Exception {
+    RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port) throws IOException, TimeoutException {
         this(name, groups, host, virtualHost, port, "", "");
     }
 

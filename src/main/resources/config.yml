@@ -1,12 +1,20 @@
-rabbitHost: "localhost"
-rabbitVirtualHost: '/'
-rabbitPort: 5672
+rabbitMQ:
+  useRabbitMQ: true
+  host: "localhost"
+  virtualHost: '/'
+  port: 5672
+  authorization:
+    useAuthorization: true
+    username: guest
+    password: guest
+redis:
+  useRedis: false
+  host: "localhost"
+  port: 6379
+  usePassword: true
+  password: "password"
 identification:
   clientName: "client1"
   groups: []
-authorization:
-  useAuthorization: true
-  username: guest
-  password: guest
 bStatsEnabled: true
 
