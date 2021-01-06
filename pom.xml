@@ -6,7 +6,7 @@
 
     <groupId>me.drepic</groupId>
     <artifactId>Proton</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <build>
         <plugins>
             <plugin>
@@ -33,6 +33,12 @@
                         </goals>
                         <configuration>
                             <minimizeJar>true</minimizeJar>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.bstats</pattern>
+                                    <shadedPattern>me.drepic.bstats</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
