@@ -2,12 +2,11 @@ package me.drepic.proton;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
-import com.rabbitmq.client.*;
+import me.drepic.proton.exception.MessageSendException;
 import me.drepic.proton.exception.RegisterMessageHandlerException;
 import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageContext;
 import me.drepic.proton.message.MessageHandler;
-import me.drepic.proton.exception.MessageSendException;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
@@ -16,6 +15,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.logging.Logger;
 
 
 /**
@@ -23,26 +23,18 @@ import java.util.function.BiConsumer;
  * @author Drepic
  *
  */
-public class ProtonManager {
-    private final String name; //The name of this client
-    private final String[] groups; //The groups the client belongs to
-    private final UUID id; //Guaranteed unique, used to prevent broadcast to self
+public abstract class ProtonManager {
+    protected final String name; //The name of this client
+    protected final String[] groups; //The groups the client belongs to
+    protected final UUID id; //Guaranteed unique, used to prevent broadcast to self
 
-    private final Map<MessageContext, Class> contextClassMap;
-    private final Map<Class, Class> primitiveMapping;
-    private final Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
+    protected final Map<MessageContext, Class> contextClassMap;
+    protected final Map<Class, Class> primitiveMapping;
+    protected final Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
 
-    private final Connection connection;
-    private final Channel channel;
-    private final String queueName;
+    protected final Gson gson;
 
-    private final Gson gson;
-
-    protected ProtonManager(String name, String[] groups, String host, String virtualHost, int port) throws Exception {
-        this(name, groups, host, virtualHost, port, "", "");
-    }
-
-    protected ProtonManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
+    protected ProtonManager(String name, String[] groups) {
         this.name = name;
         this.groups = groups;
         this.id = UUID.randomUUID();
@@ -59,78 +51,6 @@ public class ProtonManager {
                 .put(Character.TYPE, Character.class).build();
 
         gson = new Gson();
-
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(host);
-        factory.setPort(port);
-        factory.setVirtualHost(virtualHost);
-
-        if(!username.isEmpty()){
-            factory.setUsername(username);
-            factory.setPassword(password);
-        }
-
-        connection = factory.newConnection();
-        channel = connection.createChannel();
-        channel.exchangeDeclare("proton.broadcast", "headers");
-        channel.exchangeDeclare("proton.direct", "headers");
-
-        queueName = channel.queueDeclare().getQueue();
-        channel.basicConsume(queueName, true, this::deliverCallback, consumerTag -> {});
-
-        Proton.pluginLogger().info(String.format("Connected as '%s' with id:%s\n", this.name, this.id.toString()));
-    }
-
-    private void deliverCallback(String consumerTag, Delivery delivery) {
-        String msg = new String(delivery.getBody(), StandardCharsets.UTF_8);
-
-        String contextString = delivery.getProperties().getHeaders().get("messageContext").toString();
-
-        MessageContext context;
-        try{
-            context = MessageContext.fromString(contextString);
-        }catch(Exception e){
-            Proton.pluginLogger().warning(String.format("Unable to parse namespace and subject from given MessageContext: %s.", contextString));
-            return;
-        }
-
-        String recipient = delivery.getProperties().getHeaders().get("recipient").toString();
-        String senderName = delivery.getProperties().getHeaders().get("x-senderName").toString();
-        UUID senderID = UUID.fromString(delivery.getProperties().getHeaders().get("x-senderID").toString());
-
-        if(senderID.equals(this.id) && recipient.isEmpty()){ //Implies this was a broadcast from us. Ignore
-            return;                                          //Conversely, we don't want to ignore messages we
-        }                                                    //purposefully sent ourself
-
-        if(!this.contextClassMap.containsKey(context)){ //Someone sent something to us that we're not listening for
-            Proton.pluginLogger().warning("Received message that has no registered handlers.");
-            return;
-        }
-
-        Class type = this.contextClassMap.get(context);
-        try{
-            Object body = gson.fromJson(msg, type);
-            MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
-            this.messageHandlers.get(context).forEach((biConsumer) -> {
-                try{
-                    biConsumer.accept(body, messageAttributes);
-                }catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    private void bindRecipient(MessageContext context, String recipient) throws IOException {
-        Map<String, Object> headers = new HashMap<>();
-
-        headers.put("x-match", "all");
-        headers.put("recipient", recipient);
-        headers.put("messageContext", context.toContextString());
-
-        channel.queueBind(queueName, "proton.direct", "", headers);
     }
 
     /**
@@ -138,48 +58,15 @@ public class ProtonManager {
      */
     private void registerMessageContext(MessageContext context) throws IOException {
 
-        bindRecipient(context, this.name);
+        this.bindRecipient(context, this.name);
 
         for (String group : this.groups) { //For each group this client belongs to, bind
             if(group.equals(this.name))continue; //prevent duplicate binding
-            bindRecipient(context, group);
+            this.bindRecipient(context, group);
         }
 
-        Map<String, Object> headers = new HashMap<>();
-        headers = new HashMap<>();
-        headers.put("x-match", "all");
-        headers.put("messageContext", context.toContextString());
-
-        channel.queueBind(queueName, "proton.broadcast", "", headers);
+        this.bindBroadcast(context);
     }
-
-    private void internalSend(String namespace, String subject, Object data, Optional<String> recipient) {
-        MessageContext context = new MessageContext(namespace, subject);
-        if(this.contextClassMap.containsKey(context) &&
-                !data.getClass().equals(this.contextClassMap.get(context))){
-            throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
-        }
-
-        try{
-            byte[] bytes = new Gson().toJson(data).getBytes(StandardCharsets.UTF_8);
-
-            Map<String, Object> headers = new HashMap<>();
-            headers.put("x-senderName", this.name);
-            headers.put("x-senderID", this.id.toString());
-            headers.put("recipient", recipient.orElse(""));
-            headers.put("messageContext", context.toContextString());
-
-            AMQP.BasicProperties.Builder propBuilder = new AMQP.BasicProperties.Builder();
-            if(!recipient.isPresent()){
-                channel.basicPublish("proton.broadcast", "", propBuilder.headers(headers).build(), bytes);
-            }else{
-                channel.basicPublish("proton.direct", context.toContextString(), propBuilder.headers(headers).build(), bytes);
-            }
-        }catch(Exception e){
-            throw new MessageSendException(e);
-        }
-    }
-
 
     /**
      * Send a message to a specific client with a given namespace and subject.
@@ -197,7 +84,27 @@ public class ProtonManager {
         if(recipient == null || recipient.isEmpty()){
             throw new IllegalArgumentException("Recipient cannot be null or empty");
         }
-        this.internalSend(namespace, subject, data, Optional.of(recipient));
+
+        if(namespace.contains("\\.") || subject.contains("\\.")){
+            throw new IllegalArgumentException("MessageContext cannot contain `.`");
+        }
+
+        if(recipient.contains("\\.")){
+            throw new IllegalArgumentException("Recipient cannot contain `.`");
+        }
+
+        MessageContext context = new MessageContext(namespace, subject);
+        if(this.contextClassMap.containsKey(context) &&
+                !data.getClass().equals(this.contextClassMap.get(context))){
+            throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
+        }
+
+        try{
+            byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
+            this.sendData(this.name, this.id, recipient, context, bytes);
+        }catch(Exception e){
+            throw new MessageSendException(e);
+        }
     }
 
     /**
@@ -210,21 +117,47 @@ public class ProtonManager {
      * @throws MessageSendException When unable to send the message
      */
     public void broadcast(String namespace, String subject, Object data) {
-       this.internalSend(namespace, subject, data, Optional.empty());
+        if(namespace.contains("\\.") || subject.contains("\\.")){
+            throw new IllegalArgumentException("MessageContext cannot contain `.`");
+        }
+        MessageContext context = new MessageContext(namespace, subject);
+        if(this.contextClassMap.containsKey(context) &&
+                !data.getClass().equals(this.contextClassMap.get(context))){
+            throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
+        }
+
+        try{
+            byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
+            this.broadcastData(this.name, this.id, context, bytes);
+        }catch(Exception e){
+            throw new MessageSendException(e);
+        }
     }
 
     /**
      * Register your message handlers
-     * @param object The class instance which holds your annotated MessageHandlers
+     * @param objects The class(s) which hold your annotated MessageHandlers
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler using the same MessageContext but a different data type
+     * @throws RegisterMessageHandlerException When trying to register a MessageHandler when the MessageContext contains the restricted `.` (period)
+     * @throws RegisterMessageHandlerException When trying to register a MessageHandler with the incorrect amount of parameters
      */
-    public void registerMessageHandlers(Object object, Plugin plugin){
+    public void registerMessageHandlers(Plugin plugin, Object... objects){
+        for(Object obj : objects){
+            registerMessageHandler(plugin, obj);
+        }
+    }
+
+    private void registerMessageHandler(Plugin plugin, Object object){
         Class<?> klass = object.getClass();
         for(final Method method : klass.getDeclaredMethods()){
             if(method.isAnnotationPresent(MessageHandler.class)){
                 MessageHandler handlerAnnotation = method.getAnnotation(MessageHandler.class);
                 String namespace = handlerAnnotation.namespace();
                 String subject = handlerAnnotation.subject();
+                if(namespace.contains("\\.") || subject.contains("\\.")){
+                    throw new RegisterMessageHandlerException("MessageContext cannot contain `.`");
+                }
+
                 MessageContext context = new MessageContext(namespace, subject);
 
                 BiConsumer<Object, MessageAttributes> biConsumer;
@@ -248,8 +181,7 @@ public class ProtonManager {
                         }
                     };
                 }else{
-                    Proton.pluginLogger().warning("Annotated MessageHandler has incorrect number of parameters");
-                    continue;
+                    throw new RegisterMessageHandlerException("Annotated MessageHandler has incorrect number of parameters");
                 }
 
                 BiConsumer<Object, MessageAttributes> wrappedBiConsumer;
@@ -292,12 +224,8 @@ public class ProtonManager {
         }
     }
 
-    protected void tearDown() {
-        try {
-            channel.close();
-            connection.close();
-        } catch (Exception ignored) {
-        }
+    protected Logger getLogger(){
+        return Proton.pluginLogger();
     }
 
     /**
@@ -324,6 +252,15 @@ public class ProtonManager {
         return this.groups;
     }
 
+    protected abstract void connect() throws Exception;
 
+    protected abstract void sendData(String sender, UUID senderID, String recipient, MessageContext context, byte[] data) throws IOException;
 
+    protected abstract void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) throws IOException;
+
+    protected abstract void bindRecipient(MessageContext context, String recipient) throws IOException;
+
+    protected abstract void bindBroadcast(MessageContext context) throws IOException;
+
+    protected abstract void tearDown();
 }

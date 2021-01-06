@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
-class RabbitSendTests extends RabbitTests {
+public class RedisSendTests extends RedisTests {
 
     @Test
     public void testSend__simpleAsyncValid() throws TimeoutException, InterruptedException {
@@ -57,10 +57,10 @@ class RabbitSendTests extends RabbitTests {
         };
         client1ProtonManager.registerMessageHandlers(proton, client1Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
-        // Wait for sync threads to get added to Bukkit from RabbitMQ
-        Thread.sleep(500);
+        // Wait for sync threads to get added to Bukkit from Jedis
+        Thread.sleep(1000);
         scheduler.performTicks(2);
-        waiter.await(1000, 2);
+        waiter.await(2000, 2);
     }
 
     @Test
@@ -83,8 +83,8 @@ class RabbitSendTests extends RabbitTests {
         };
         client1ProtonManager.registerMessageHandlers(proton, client1Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
-        // Wait for sync threads to get added to Bukkit from RabbitMQ
-        Thread.sleep(500);
+        // Wait for sync threads to get added to Bukkit from Redis
+        Thread.sleep(1000);
         scheduler.performTicks(2);
         waiter.await(1000, 2);
     }
@@ -184,5 +184,4 @@ class RabbitSendTests extends RabbitTests {
         Thread.sleep(500);
         waiter.await(1000, 1);
     }
-
 }
