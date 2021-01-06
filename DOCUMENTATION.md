@@ -56,7 +56,7 @@ identification:
 bStatsEnabled: true
 ```
 
-There's a lot of options here, but let's look at them in smaller pieces. 
+There are a lot of options here, but let's look at them in smaller pieces. 
 
 The first section is for the configuration of RabbitMQ.
 
@@ -81,7 +81,7 @@ rabbitMQ:
 
 Next we have the `Redis` section of the config.
 
-`useRedis` sets whether Proton will try to use Redis. (NOTE: If both Rabbit and Redis are set to be used, it will default to RabbitMQ)  
+`useRedis` sets whether Proton will try to use Redis. (NOTE: Proton only uses one service at a time, if both are selected, Proton will use RabbitMQ)  
 `host` is the ip of your Redis instance.  
 `port` is its port  
 `usePassword` sets whether Proton will try to use a password for the connection    
@@ -164,9 +164,7 @@ Lets break down these arguments.
 * `recipient` is used to define the client or group you wish to send to.
 * `data` is the object that you wish to send. This can be any object or primitive. The only cavaet is that is that is must be Json serializable. Otherwise, you will receive exceptions.
 
-<b>Important</b>: `namespace` and `subject` form what is called a `MessageContext`. Each `MessageContext` can only have one defined datatype. So if you define a namespace and subject, make sure you always send the same type of data through that context.
-
-If you want to send a message to all clients that may be listening to a specific `MessageContext` you can use the broadcast method instead:
+If you want to send a message to all clients that may be listening to a specific `namespace` and `subject` you can use the broadcast method instead:
 
 ```Java
 String namespace = "myPluginOrOrganization";
@@ -175,6 +173,11 @@ Object data = new Object();
 protonManager.broadcast(namespace, subject, data);
 ```
 
+### Message Context
+`namespace` and `subject` form what is called a `MessageContext`. Each `MessageContext` can only have one defined datatype. So if you define a namespace and subject, make sure you always send the same type of data through that context.
+
+### Restrictions on `MessageContext`, recipients, and groups
+The use of `.` (period) is not allowed when defining a namespace, subject, recipient, or group. It is a reserved character used for internal processing.
 
 ### Receiving a message
 
@@ -208,7 +211,6 @@ class MyClass {
     ...
 }
 ```
-
 
 The code within a `MessageHandler` is synchronous with Bukkit by default. This was a design decision to match the fact that most API calls must be synchronous. 
 However, you can receive messages asynchronously if you wish by adding an optional attribute.

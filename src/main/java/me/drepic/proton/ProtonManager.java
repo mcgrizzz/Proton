@@ -85,6 +85,14 @@ public abstract class ProtonManager {
             throw new IllegalArgumentException("Recipient cannot be null or empty");
         }
 
+        if(namespace.contains("\\.") || subject.contains("\\.")){
+            throw new IllegalArgumentException("MessageContext cannot contain `.`");
+        }
+
+        if(recipient.contains("\\.")){
+            throw new IllegalArgumentException("Recipient cannot contain `.`");
+        }
+
         MessageContext context = new MessageContext(namespace, subject);
         if(this.contextClassMap.containsKey(context) &&
                 !data.getClass().equals(this.contextClassMap.get(context))){
@@ -109,6 +117,9 @@ public abstract class ProtonManager {
      * @throws MessageSendException When unable to send the message
      */
     public void broadcast(String namespace, String subject, Object data) {
+        if(namespace.contains("\\.") || subject.contains("\\.")){
+            throw new IllegalArgumentException("MessageContext cannot contain `.`");
+        }
         MessageContext context = new MessageContext(namespace, subject);
         if(this.contextClassMap.containsKey(context) &&
                 !data.getClass().equals(this.contextClassMap.get(context))){
@@ -127,6 +138,8 @@ public abstract class ProtonManager {
      * Register your message handlers
      * @param objects The class(s) which hold your annotated MessageHandlers
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler using the same MessageContext but a different data type
+     * @throws RegisterMessageHandlerException When trying to register a MessageHandler when the MessageContext contains the restricted `.` (period)
+     * @throws RegisterMessageHandlerException When trying to register a MessageHandler with the incorrect amount of parameters
      */
     public void registerMessageHandlers(Plugin plugin, Object... objects){
         for(Object obj : objects){
@@ -141,6 +154,10 @@ public abstract class ProtonManager {
                 MessageHandler handlerAnnotation = method.getAnnotation(MessageHandler.class);
                 String namespace = handlerAnnotation.namespace();
                 String subject = handlerAnnotation.subject();
+                if(namespace.contains("\\.") || subject.contains("\\.")){
+                    throw new RegisterMessageHandlerException("MessageContext cannot contain `.`");
+                }
+
                 MessageContext context = new MessageContext(namespace, subject);
 
                 BiConsumer<Object, MessageAttributes> biConsumer;
@@ -164,8 +181,7 @@ public abstract class ProtonManager {
                         }
                     };
                 }else{
-                    Proton.pluginLogger().warning("Annotated MessageHandler has incorrect number of parameters");
-                    continue;
+                    throw new RegisterMessageHandlerException("Annotated MessageHandler has incorrect number of parameters");
                 }
 
                 BiConsumer<Object, MessageAttributes> wrappedBiConsumer;

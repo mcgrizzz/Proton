@@ -77,10 +77,9 @@ public class RedisManager extends ProtonManager {
     }
 
     protected void deliveryCallback(String channelString, String json){
-        RedisChannel channel = gson.fromJson(channelString, RedisChannel.class);
+        RedisChannel channel = RedisChannel.fromString(channelString);
         MessageContext context = channel.context;
-        RedisDataWrapper  wrapper = gson.fromJson(json, RedisDataWrapper.class);
-
+        RedisDataWrapper wrapper = gson.fromJson(json, RedisDataWrapper.class);
         String recipient = channel.recipient;
         String senderName = wrapper.senderName;
         UUID senderID = wrapper.senderID;
@@ -96,7 +95,6 @@ public class RedisManager extends ProtonManager {
 
         Class type = this.contextClassMap.get(context);
         String data = new String(wrapper.data, StandardCharsets.UTF_8);
-
         try{
             Object body = gson.fromJson(data, type);
             MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
@@ -116,7 +114,7 @@ public class RedisManager extends ProtonManager {
     protected void sendData(String sender, UUID senderID, String recipient, MessageContext context, byte[] data) throws IOException {
         RedisChannel channel = new RedisChannel(context, recipient);
         RedisDataWrapper wrapper = new RedisDataWrapper(sender, senderID, data);
-        String channelString = gson.toJson(channel);
+        String channelString = channel.toString();
         String wrapperString = gson.toJson(wrapper);
 
         pubCommands.publish(channelString, wrapperString);
@@ -126,7 +124,7 @@ public class RedisManager extends ProtonManager {
     protected void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) throws IOException {
         RedisChannel channel = new RedisChannel(context, "");
         RedisDataWrapper wrapper = new RedisDataWrapper(sender, senderID, data);
-        String channelString = gson.toJson(channel);
+        String channelString = channel.toString();
         String wrapperString = gson.toJson(wrapper);
 
         pubCommands.publish(channelString, wrapperString);
@@ -135,15 +133,13 @@ public class RedisManager extends ProtonManager {
     @Override
     protected void bindRecipient(MessageContext context, String recipient) throws IOException {
         RedisChannel channel = new RedisChannel(context, recipient);
-
-        subCommands.subscribe(gson.toJson(channel));
+        subCommands.subscribe(channel.toString());
     }
 
     @Override
     protected void bindBroadcast(MessageContext context) throws IOException {
         RedisChannel channel = new RedisChannel(context, "");
-
-        subCommands.subscribe(gson.toJson(channel));
+        subCommands.subscribe(channel.toString());
     }
 
     @Override

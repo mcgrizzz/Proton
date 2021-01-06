@@ -2,6 +2,8 @@ package me.drepic.proton.redis;
 
 import me.drepic.proton.message.MessageContext;
 
+import java.util.Arrays;
+
 public class RedisChannel {
 
     //Class which defines a redis channel
@@ -16,16 +18,15 @@ public class RedisChannel {
 
     @Override
     public String toString(){
-
         return this.context.toContextString() + "." + this.recipient;
     }
 
     public static RedisChannel fromString(String s){
         String[] l = s.split("\\.");
-        if(l.length != 3){
+        if(l.length < 2 || l.length > 3){
             throw new IllegalArgumentException();
         }
         MessageContext context = new MessageContext(l[0], l[1]);
-        return new RedisChannel(context, l[2]);
+        return new RedisChannel(context, l.length == 2 ? "" : l[2]);
     }
 }

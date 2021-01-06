@@ -8,6 +8,9 @@ public class MessageContext {
     final String subject;
 
     public MessageContext(String namespace, String subject){
+        if(namespace.contains("\\.") || subject.contains("\\.")){
+            throw new IllegalArgumentException("MessageContext cannot contain `.`");
+        }
         this.namespace = namespace;
         this.subject = subject;
     }

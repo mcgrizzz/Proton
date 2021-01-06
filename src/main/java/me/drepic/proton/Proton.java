@@ -36,7 +36,19 @@ public class Proton extends JavaPlugin implements Listener {
         saveConfig();
 
         String clientName = config.getString("identification.clientName");
+        if(clientName == null){
+            logger.log(Level.SEVERE, "The clientName must be set.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         String[] groups = config.getStringList("identification.groups").toArray(new String[0]);
+
+        if(!verifyIdentification(clientName, groups)){
+            logger.log(Level.SEVERE, "The clientName/groups cannot contain `.` - Shutting down.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
 
         boolean useRabbitMQ = config.getBoolean("rabbitMQ.useRabbitMQ");
         boolean useRedis = config.getBoolean("redis.useRedis");
@@ -51,7 +63,7 @@ public class Proton extends JavaPlugin implements Listener {
         }else if(useRedis){
             setupRedis(clientName, groups);
         }else{
-            logger.log(Level.INFO, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
+            logger.log(Level.SEVERE, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -64,7 +76,6 @@ public class Proton extends JavaPlugin implements Listener {
     }
 
     private void setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
-
         String host = getConfig().getString("rabbitMQ.host");
         String virtualHost = getConfig().getString("rabbitMQ.virtualHost");
         int port = getConfig().getInt("rabbitMQ.port");
@@ -90,6 +101,20 @@ public class Proton extends JavaPlugin implements Listener {
             String password = getConfig().getString("redis.password");
             manager = new RedisManager(clientName, groups, host, port, password);
         }
+    }
+
+    private boolean verifyIdentification(String clientName, String[] groups){
+        if(clientName.contains("\\.")){
+            return false;
+        }
+
+        for(String group : groups){
+            if(group.contains("\\.")){
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
