@@ -3,12 +3,9 @@ package me.drepic.proton;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.java.JavaPluginLoader;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -20,11 +17,6 @@ public class Proton extends JavaPlugin implements Listener {
     private static Logger logger;
 
     private static final int BSTATS_PLUGIN_ID = 9866;
-
-    // Required for unit tests
-    protected Proton(JavaPluginLoader loader, PluginDescriptionFile descriptionFile, File dataFolder, File file) {
-        super(loader, descriptionFile, dataFolder, file);
-    }
 
     @Override
     public void onEnable(){
