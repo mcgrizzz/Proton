@@ -2,7 +2,6 @@ package me.drepic.proton;
 
 import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -11,7 +10,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Proton extends JavaPlugin implements Listener {
+public class Proton extends JavaPlugin {
 
     private static ProtonManager manager;
     private static Logger logger;

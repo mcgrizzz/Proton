@@ -1,5 +1,6 @@
 package me.drepic.proton;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import me.drepic.proton.exception.MessageSendException;
@@ -30,7 +31,8 @@ public abstract class ProtonManager {
 
     protected final Map<MessageContext, Class> contextClassMap;
     protected final Map<Class, Class> primitiveMapping;
-    protected final Map<MessageContext, List<BiConsumer<Object, MessageAttributes>>> messageHandlers;
+    protected final ArrayListMultimap<MessageContext, BiConsumer<Object, MessageAttributes>> messageHandlers;
+    private final Object registrationLock = new Object();
 
     protected final Gson gson;
 
@@ -39,7 +41,7 @@ public abstract class ProtonManager {
         this.groups = groups;
         this.id = UUID.randomUUID();
         this.contextClassMap = new HashMap<>();
-        this.messageHandlers = new HashMap<>();
+        this.messageHandlers = ArrayListMultimap.create();
         this.primitiveMapping = ImmutableMap.<Class, Class>builder()
                 .put(Byte.TYPE, Byte.class)
                 .put(Short.TYPE, Short.class)
@@ -204,20 +206,22 @@ public abstract class ProtonManager {
                 }
 
                 if(!this.contextClassMap.containsKey(context)){
-                    this.contextClassMap.put(context, parameterClass);
-                    List<BiConsumer<Object, MessageAttributes>> biConsumers = new ArrayList<>();
-                    biConsumers.add(wrappedBiConsumer);
-                    this.messageHandlers.put(context, biConsumers);
-                    try {
-                        registerMessageContext(context);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    synchronized(registrationLock){
+                        this.contextClassMap.put(context, parameterClass);
+                        this.messageHandlers.put(context, wrappedBiConsumer);
+                        try {
+                            registerMessageContext(context);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }else{
                     if(!this.contextClassMap.get(context).equals(parameterClass)){
                         throw new RegisterMessageHandlerException("MessageContext already has defined data type");
                     }else{
-                        this.messageHandlers.get(context).add(wrappedBiConsumer);
+                        synchronized(registrationLock){
+                            this.messageHandlers.put(context, wrappedBiConsumer);
+                        }
                     }
                 }
             }
