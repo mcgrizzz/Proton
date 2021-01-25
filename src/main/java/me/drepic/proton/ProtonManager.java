@@ -2,6 +2,8 @@ package me.drepic.proton;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
 import com.google.gson.Gson;
 import me.drepic.proton.exception.MessageSendException;
 import me.drepic.proton.exception.RegisterMessageHandlerException;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
@@ -29,10 +32,9 @@ public abstract class ProtonManager {
     protected final String[] groups; //The groups the client belongs to
     protected final UUID id; //Guaranteed unique, used to prevent broadcast to self
 
-    protected final Map<MessageContext, Class> contextClassMap;
+    protected final ConcurrentHashMap<MessageContext, Class> contextClassMap;
     protected final Map<Class, Class> primitiveMapping;
-    protected final ArrayListMultimap<MessageContext, BiConsumer<Object, MessageAttributes>> messageHandlers;
-    private final Object registrationLock = new Object();
+    protected final ListMultimap<MessageContext, BiConsumer<Object, MessageAttributes>> messageHandlers;
 
     protected final Gson gson;
 
@@ -40,8 +42,8 @@ public abstract class ProtonManager {
         this.name = name;
         this.groups = groups;
         this.id = UUID.randomUUID();
-        this.contextClassMap = new HashMap<>();
-        this.messageHandlers = ArrayListMultimap.create();
+        this.contextClassMap = new ConcurrentHashMap<>();
+        this.messageHandlers = Multimaps.synchronizedListMultimap(ArrayListMultimap.create()); //Thread-safe update operations
         this.primitiveMapping = ImmutableMap.<Class, Class>builder()
                 .put(Byte.TYPE, Byte.class)
                 .put(Short.TYPE, Short.class)
@@ -206,22 +208,18 @@ public abstract class ProtonManager {
                 }
 
                 if(!this.contextClassMap.containsKey(context)){
-                    synchronized(registrationLock){
-                        this.contextClassMap.put(context, parameterClass);
-                        this.messageHandlers.put(context, wrappedBiConsumer);
-                        try {
-                            registerMessageContext(context);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    this.contextClassMap.put(context, parameterClass);
+                    this.messageHandlers.put(context, wrappedBiConsumer);
+                    try {
+                        registerMessageContext(context);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }else{
                     if(!this.contextClassMap.get(context).equals(parameterClass)){
                         throw new RegisterMessageHandlerException("MessageContext already has defined data type");
                     }else{
-                        synchronized(registrationLock){
-                            this.messageHandlers.put(context, wrappedBiConsumer);
-                        }
+                        this.messageHandlers.put(context, wrappedBiConsumer);
                     }
                 }
             }
