@@ -2,8 +2,6 @@ package me.drepic.proton.redis;
 
 import me.drepic.proton.message.MessageContext;
 
-import java.util.Arrays;
-
 public class RedisChannel {
 
     //Class which defines a redis channel

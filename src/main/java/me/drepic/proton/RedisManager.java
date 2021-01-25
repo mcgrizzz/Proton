@@ -10,7 +10,6 @@ import me.drepic.proton.message.MessageContext;
 import me.drepic.proton.redis.RedisChannel;
 import me.drepic.proton.redis.RedisDataWrapper;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -111,7 +110,7 @@ public class RedisManager extends ProtonManager {
     }
 
     @Override
-    protected void sendData(String sender, UUID senderID, String recipient, MessageContext context, byte[] data) throws IOException {
+    protected void sendData(String sender, UUID senderID, String recipient, MessageContext context, byte[] data) {
         RedisChannel channel = new RedisChannel(context, recipient);
         RedisDataWrapper wrapper = new RedisDataWrapper(sender, senderID, data);
         String channelString = channel.toString();
@@ -121,7 +120,7 @@ public class RedisManager extends ProtonManager {
     }
 
     @Override
-    protected void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) throws IOException {
+    protected void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) {
         RedisChannel channel = new RedisChannel(context, "");
         RedisDataWrapper wrapper = new RedisDataWrapper(sender, senderID, data);
         String channelString = channel.toString();
@@ -131,13 +130,13 @@ public class RedisManager extends ProtonManager {
     }
 
     @Override
-    protected void bindRecipient(MessageContext context, String recipient) throws IOException {
+    protected void bindRecipient(MessageContext context, String recipient) {
         RedisChannel channel = new RedisChannel(context, recipient);
         subCommands.subscribe(channel.toString());
     }
 
     @Override
-    protected void bindBroadcast(MessageContext context) throws IOException {
+    protected void bindBroadcast(MessageContext context) {
         RedisChannel channel = new RedisChannel(context, "");
         subCommands.subscribe(channel.toString());
     }
