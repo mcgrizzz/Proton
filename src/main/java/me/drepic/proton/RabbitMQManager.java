@@ -84,7 +84,7 @@ public class RabbitMQManager extends ProtonManager {
             return;
         }
 
-        Class type = this.contextClassMap.get(context);
+        Class<?> type = this.contextClassMap.get(context);
         try {
             Object body = gson.fromJson(msg, type);
             MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
