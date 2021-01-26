@@ -16,7 +16,8 @@ import org.bukkit.plugin.Plugin;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
@@ -32,8 +33,8 @@ public abstract class ProtonManager {
     protected final String[] groups; //The groups the client belongs to
     protected final UUID id; //Guaranteed unique, used to prevent broadcast to self
 
-    protected final ConcurrentHashMap<MessageContext, Class> contextClassMap;
-    protected final Map<Class, Class> primitiveMapping;
+    protected final ConcurrentHashMap<MessageContext, Class<?>> contextClassMap;
+    protected final Map<Class<?>, Class<?>> primitiveMapping;
     protected final ListMultimap<MessageContext, BiConsumer<Object, MessageAttributes>> messageHandlers;
 
     protected final Gson gson;
@@ -44,7 +45,7 @@ public abstract class ProtonManager {
         this.id = UUID.randomUUID();
         this.contextClassMap = new ConcurrentHashMap<>();
         this.messageHandlers = Multimaps.synchronizedListMultimap(ArrayListMultimap.create()); //Thread-safe update operations
-        this.primitiveMapping = ImmutableMap.<Class, Class>builder()
+        this.primitiveMapping = ImmutableMap.<Class<?>, Class<?>>builder()
                 .put(Byte.TYPE, Byte.class)
                 .put(Short.TYPE, Short.class)
                 .put(Integer.TYPE, Integer.class)
