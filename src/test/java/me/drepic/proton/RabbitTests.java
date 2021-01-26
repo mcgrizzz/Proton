@@ -3,18 +3,13 @@ package me.drepic.proton;
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.scheduler.BukkitSchedulerMock;
-import me.drepic.proton.exception.RegisterMessageHandlerException;
-import me.drepic.proton.message.MessageHandler;
 import net.jodah.concurrentunit.Waiter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests the ProtonManager. Requires that rabbitmq is running on localhost.
