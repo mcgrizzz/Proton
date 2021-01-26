@@ -52,7 +52,6 @@ public class Proton extends JavaPlugin {
         if (useRabbitMQ) {
             try {
                 manager = setupRabbitMQ(clientName, groups);
-                getServer().getServicesManager().register(ProtonManager.class, manager, this, ServicePriority.Normal);
             } catch (IOException | TimeoutException e) {
                 logger.severe("Failed to setup RabbitMQ Connection");
                 e.printStackTrace();
@@ -62,7 +61,6 @@ public class Proton extends JavaPlugin {
         } else {
             try {
                 manager = setupRedis(clientName, groups);
-                getServer().getServicesManager().register(ProtonManager.class, manager, this, ServicePriority.Normal);
             } catch (Exception e) {
                 logger.severe("Failed to setup Redis Connection");
                 e.printStackTrace();
