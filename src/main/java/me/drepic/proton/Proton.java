@@ -19,7 +19,6 @@ public class Proton extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
         logger = getLogger();
 
         FileConfiguration config = getConfig();
@@ -71,6 +70,7 @@ public class Proton extends JavaPlugin {
                 return;
             }
         }
+        getServer().getServicesManager().register(ProtonManager.class, manager, this, ServicePriority.Normal);
 
         boolean bStats = config.getBoolean("bStatsEnabled");
 
@@ -87,7 +87,6 @@ public class Proton extends JavaPlugin {
                 e.printStackTrace();
             }
         }
-
     }
 
     private RabbitMQManager setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {

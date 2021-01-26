@@ -2,8 +2,9 @@ package me.drepic.proton;
 
 import me.drepic.proton.exception.RegisterMessageHandlerException;
 import me.drepic.proton.message.MessageHandler;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RabbitSpecialTests extends RabbitTests {
 
@@ -18,7 +19,7 @@ public class RabbitSpecialTests extends RabbitTests {
             public void recv2(char recvChar) {
             }
         };
-        Assertions.assertThatThrownBy(() -> client1ProtonManager.registerMessageHandlers(proton, client1Handler))
+        assertThatThrownBy(() -> client1ProtonManager.registerMessageHandlers(proton, client1Handler))
                 .isInstanceOf(RegisterMessageHandlerException.class)
                 .hasMessage("MessageContext already has defined data type");
 
