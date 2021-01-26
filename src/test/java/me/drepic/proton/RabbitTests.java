@@ -13,11 +13,11 @@ import java.util.logging.Logger;
 
 /**
  * Tests the ProtonManager. Requires that rabbitmq is running on localhost.
- *
+ * <p>
  * Most tests use Waiter to ensure that the message handlers have been called.
  * Waiter.await(timeout, N) will throw an exception if N parties have not called resume.
  * Waiter assertions should be used in any code running in a different thread.
- *
+ * <p>
  * Most tests use async = true as this does not require manually progressing through server ticks.
  */
 class RabbitTests {

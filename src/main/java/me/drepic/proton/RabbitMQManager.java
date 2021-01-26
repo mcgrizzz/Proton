@@ -55,8 +55,7 @@ public class RabbitMQManager extends ProtonManager {
         channel.exchangeDeclare("proton.direct", "headers");
 
         queueName = channel.queueDeclare().getQueue();
-        channel.basicConsume(queueName, true, this::deliverCallback, consumerTag -> {
-        });
+        channel.basicConsume(queueName, true, this::deliverCallback, consumerTag -> {});
 
         getLogger().info(String.format("Connected as '%s' with id:%s\n", this.name, this.id.toString()));
     }
@@ -85,7 +84,7 @@ public class RabbitMQManager extends ProtonManager {
             return;
         }
 
-        Class<?> type = this.contextClassMap.get(context);
+        Class type = this.contextClassMap.get(context);
         try {
             Object body = gson.fromJson(msg, type);
             MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);

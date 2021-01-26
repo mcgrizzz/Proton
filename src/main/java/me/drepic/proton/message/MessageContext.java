@@ -7,8 +7,8 @@ public class MessageContext {
     final String namespace;
     final String subject;
 
-    public MessageContext(String namespace, String subject){
-        if(namespace.contains("\\.") || subject.contains("\\.")){
+    public MessageContext(String namespace, String subject) {
+        if (namespace.contains("\\.") || subject.contains("\\.")) {
             throw new IllegalArgumentException("MessageContext cannot contain `.`");
         }
         this.namespace = namespace;
@@ -36,13 +36,13 @@ public class MessageContext {
         return Objects.hash(namespace, subject);
     }
 
-    public String toContextString(){
+    public String toContextString() {
         return this.namespace + "." + this.subject;
     }
 
-    public static MessageContext fromString(String s){
+    public static MessageContext fromString(String s) {
         String[] l = s.split("\\.");
-        if(l.length != 2){
+        if (l.length != 2) {
             throw new IllegalArgumentException();
         }
         return new MessageContext(l[0], l[1]);

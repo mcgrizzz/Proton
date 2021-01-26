@@ -2,7 +2,7 @@ package me.drepic.proton;
 
 import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.plugin.ServicePriority;
+import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class Proton extends JavaPlugin {
     @Override
     public void onEnable() {
 
-        logger = getLogger();
+        logger = new PluginLogger(this);
 
         FileConfiguration config = getConfig();
         config.options().copyDefaults(true);
@@ -43,35 +43,20 @@ public class Proton extends JavaPlugin {
 
         boolean useRabbitMQ = config.getBoolean("rabbitMQ.useRabbitMQ");
         boolean useRedis = config.getBoolean("redis.useRedis");
-
-        if (!useRedis && !useRabbitMQ) {
+        if (useRabbitMQ) {
+            try {
+                setupRabbitMQ(clientName, groups);
+            } catch (IOException | TimeoutException e) {
+                e.printStackTrace();
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+        } else if (useRedis) {
+            setupRedis(clientName, groups);
+        } else {
             logger.log(Level.SEVERE, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
             getServer().getPluginManager().disablePlugin(this);
             return;
-        }
-
-        if (useRabbitMQ) {
-            try {
-                manager = setupRabbitMQ(clientName, groups);
-                getServer().getServicesManager().register(ProtonManager.class, manager, this, ServicePriority.Normal);
-            } catch (IOException | TimeoutException e) {
-                logger.severe("Failed to setup RabbitMQ Connection");
-                e.printStackTrace();
-                getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
-        }
-
-        if (useRedis) {
-            try {
-                manager = setupRedis(clientName, groups);
-                getServer().getServicesManager().register(ProtonManager.class, manager, this, ServicePriority.Normal);
-            } catch (Exception e) {
-                logger.severe("Failed to setup Redis Connection");
-                e.printStackTrace();
-                getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
         }
 
         boolean bStats = config.getBoolean("bStatsEnabled");
@@ -81,31 +66,31 @@ public class Proton extends JavaPlugin {
         }
     }
 
-    private RabbitMQManager setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
+    private void setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
         String host = getConfig().getString("rabbitMQ.host");
         String virtualHost = getConfig().getString("rabbitMQ.virtualHost");
         int port = getConfig().getInt("rabbitMQ.port");
         boolean useAuthorization = getConfig().getBoolean("rabbitMQ.authorization.useAuthorization");
 
         if (!useAuthorization) {
-            return new RabbitMQManager(clientName, groups, host, virtualHost, port);
+            manager = new RabbitMQManager(clientName, groups, host, virtualHost, port);
         } else {
             String username = getConfig().getString("rabbitMQ.authorization.username");
             String password = getConfig().getString("rabbitMQ.authorization.password");
-            return new RabbitMQManager(clientName, groups, host, virtualHost, port, username, password);
+            manager = new RabbitMQManager(clientName, groups, host, virtualHost, port, username, password);
         }
     }
 
-    private RedisManager setupRedis(String clientName, String[] groups) {
+    private void setupRedis(String clientName, String[] groups) {
         String host = getConfig().getString("redis.host");
         int port = getConfig().getInt("redis.port");
         boolean usePassword = getConfig().getBoolean("redis.usePassword");
 
         if (!usePassword) {
-            return new RedisManager(clientName, groups, host, port);
+            manager = new RedisManager(clientName, groups, host, port);
         } else {
             String password = getConfig().getString("redis.password");
-            return new RedisManager(clientName, groups, host, port, password);
+            manager = new RedisManager(clientName, groups, host, port, password);
         }
     }
 
