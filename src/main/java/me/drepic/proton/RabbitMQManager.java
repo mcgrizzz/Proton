@@ -23,7 +23,7 @@ public class RabbitMQManager extends ProtonManager {
     private final String username;
     private final String password;
 
-     RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
+    RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
         super(name, groups);
         this.host = host;
         this.virtualHost = virtualHost;
@@ -44,7 +44,7 @@ public class RabbitMQManager extends ProtonManager {
         factory.setPort(port);
         factory.setVirtualHost(virtualHost);
 
-        if(!username.isEmpty()){
+        if (!username.isEmpty()) {
             factory.setUsername(username);
             factory.setPassword(password);
         }
@@ -64,9 +64,9 @@ public class RabbitMQManager extends ProtonManager {
         String msg = new String(delivery.getBody(), StandardCharsets.UTF_8);
         String contextString = delivery.getProperties().getHeaders().get("messageContext").toString();
         MessageContext context;
-        try{
+        try {
             context = MessageContext.fromString(contextString);
-        }catch(Exception e){
+        } catch (Exception e) {
             getLogger().warning(String.format("Unable to parse namespace and subject from given MessageContext: %s.", contextString));
             return;
         }
@@ -75,27 +75,27 @@ public class RabbitMQManager extends ProtonManager {
         String senderName = delivery.getProperties().getHeaders().get("x-senderName").toString();
         UUID senderID = UUID.fromString(delivery.getProperties().getHeaders().get("x-senderID").toString());
 
-        if(senderID.equals(this.id) && recipient.isEmpty()){ //Implies this was a broadcast from us. Ignore
+        if (senderID.equals(this.id) && recipient.isEmpty()) { //Implies this was a broadcast from us. Ignore
             return;                                          //Conversely, we don't want to ignore messages we
         }                                                    //purposefully sent ourself
 
-        if(!this.contextClassMap.containsKey(context)){ //Someone sent something to us that we're not listening for
+        if (!this.contextClassMap.containsKey(context)) { //Someone sent something to us that we're not listening for
             getLogger().warning("Received message that has no registered handlers.");
             return;
         }
 
         Class type = this.contextClassMap.get(context);
-        try{
+        try {
             Object body = gson.fromJson(msg, type);
             MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
             this.messageHandlers.get(context).forEach((biConsumer) -> {
-                try{
+                try {
                     biConsumer.accept(body, messageAttributes);
-                }catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

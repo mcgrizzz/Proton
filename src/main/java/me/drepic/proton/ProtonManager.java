@@ -24,8 +24,8 @@ import java.util.logging.Logger;
 
 /**
  * Main entry point for using Proton
- * @author Drepic
  *
+ * @author Drepic
  */
 public abstract class ProtonManager {
     protected final String name; //The name of this client
@@ -65,7 +65,7 @@ public abstract class ProtonManager {
         this.bindRecipient(context, this.name);
 
         for (String group : this.groups) { //For each group this client belongs to, bind
-            if(group.equals(this.name))continue; //prevent duplicate binding
+            if (group.equals(this.name)) continue; //prevent duplicate binding
             this.bindRecipient(context, group);
         }
 
@@ -76,89 +76,92 @@ public abstract class ProtonManager {
      * Send a message to a specific client with a given namespace and subject.
      * <br><b>NOTE: </b>The namespace and subject together are mapped to just one data type.
      * The namespace and subject together form a {@link MessageContext}
+     *
      * @param namespace This is the namespace of the message, usually you want to set this to your plugin name or organization
-     * @param subject Set this to further define what your message is doing.
-     * @param data This is the data you want to send. It must be JSON serializable
+     * @param subject   Set this to further define what your message is doing.
+     * @param data      This is the data you want to send. It must be JSON serializable
      * @param recipient The client name or group for the recipient(s) of the message.
      * @throws IllegalArgumentException When trying to send the wrong datatype given a defined {@link MessageContext}
      * @throws IllegalArgumentException When trying to send to an empty or null recipient
-     * @throws MessageSendException When unable to send the message
+     * @throws MessageSendException     When unable to send the message
      */
     public void send(String namespace, String subject, Object data, String recipient) {
-        if(recipient == null || recipient.isEmpty()){
+        if (recipient == null || recipient.isEmpty()) {
             throw new IllegalArgumentException("Recipient cannot be null or empty");
         }
 
-        if(namespace.contains("\\.") || subject.contains("\\.")){
+        if (namespace.contains("\\.") || subject.contains("\\.")) {
             throw new IllegalArgumentException("MessageContext cannot contain `.`");
         }
 
-        if(recipient.contains("\\.")){
+        if (recipient.contains("\\.")) {
             throw new IllegalArgumentException("Recipient cannot contain `.`");
         }
 
         MessageContext context = new MessageContext(namespace, subject);
-        if(this.contextClassMap.containsKey(context) &&
-                !data.getClass().equals(this.contextClassMap.get(context))){
+        if (this.contextClassMap.containsKey(context) &&
+                !data.getClass().equals(this.contextClassMap.get(context))) {
             throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
         }
 
-        try{
+        try {
             byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
             this.sendData(this.name, this.id, recipient, context, bytes);
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new MessageSendException(e);
         }
     }
 
     /**
      * Broadcast data to all clients
-     * @see me.drepic.proton.ProtonManager#send
+     *
      * @param namespace This is the namespace of the message, usually you want to set this to your plugin name or organization
-     * @param subject Set this to further define what your message is doing.
-     * @param data This is the data you want to send. It must be JSON serializable
+     * @param subject   Set this to further define what your message is doing.
+     * @param data      This is the data you want to send. It must be JSON serializable
      * @throws IllegalArgumentException When trying to send the wrong datatype given a defined {@link MessageContext}
-     * @throws MessageSendException When unable to send the message
+     * @throws MessageSendException     When unable to send the message
+     * @see me.drepic.proton.ProtonManager#send
      */
     public void broadcast(String namespace, String subject, Object data) {
-        if(namespace.contains("\\.") || subject.contains("\\.")){
+        if (namespace.contains("\\.") || subject.contains("\\.")) {
             throw new IllegalArgumentException("MessageContext cannot contain `.`");
         }
         MessageContext context = new MessageContext(namespace, subject);
-        if(this.contextClassMap.containsKey(context) &&
-                !data.getClass().equals(this.contextClassMap.get(context))){
+        if (this.contextClassMap.containsKey(context) &&
+                !data.getClass().equals(this.contextClassMap.get(context))) {
             throw new IllegalArgumentException("Trying to send the wrong datatype for an already defined MessageContext");
         }
 
-        try{
+        try {
             byte[] bytes = gson.toJson(data).getBytes(StandardCharsets.UTF_8);
             this.broadcastData(this.name, this.id, context, bytes);
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new MessageSendException(e);
         }
     }
 
     /**
      * Register your message handlers
+     *
      * @param objects The class(s) which hold your annotated MessageHandlers
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler using the same MessageContext but a different data type
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler when the MessageContext contains the restricted `.` (period)
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler with the incorrect amount of parameters
      */
-    public void registerMessageHandlers(Plugin plugin, Object... objects){
-        for(Object obj : objects){
+    public void registerMessageHandlers(Plugin plugin, Object... objects) {
+        for (Object obj : objects) {
             registerMessageHandler(plugin, obj);
         }
     }
 
-    private void registerMessageHandler(Plugin plugin, Object object){
+    private void registerMessageHandler(Plugin plugin, Object object) {
         Class<?> klass = object.getClass();
-        for(final Method method : klass.getDeclaredMethods()){
-            if(method.isAnnotationPresent(MessageHandler.class)){
+        for (final Method method : klass.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(MessageHandler.class)) {
                 MessageHandler handlerAnnotation = method.getAnnotation(MessageHandler.class);
                 String namespace = handlerAnnotation.namespace();
                 String subject = handlerAnnotation.subject();
-                if(namespace.contains("\\.") || subject.contains("\\.")){
+                if (namespace.contains("\\.") || subject.contains("\\.")) {
                     throw new RegisterMessageHandlerException("MessageContext cannot contain `.`");
                 }
 
@@ -166,7 +169,7 @@ public abstract class ProtonManager {
 
                 BiConsumer<Object, MessageAttributes> biConsumer;
                 Class<?> parameterClass;
-                if(method.getParameterCount() == 1){
+                if (method.getParameterCount() == 1) {
                     parameterClass = method.getParameterTypes()[0];
                     biConsumer = (data, messageAttributes) -> {
                         try {
@@ -175,7 +178,7 @@ public abstract class ProtonManager {
                             e.printStackTrace();
                         }
                     };
-                }else if(method.getParameterCount() == 2){
+                } else if (method.getParameterCount() == 2) {
                     parameterClass = method.getParameterTypes()[0];
                     biConsumer = (data, messageAttributes) -> {
                         try {
@@ -184,18 +187,18 @@ public abstract class ProtonManager {
                             e.printStackTrace();
                         }
                     };
-                }else{
+                } else {
                     throw new RegisterMessageHandlerException("Annotated MessageHandler has incorrect number of parameters");
                 }
 
                 BiConsumer<Object, MessageAttributes> wrappedBiConsumer;
-                if(!handlerAnnotation.async()){ //Wrap the BiConsumer so it can be synchronous
+                if (!handlerAnnotation.async()) { //Wrap the BiConsumer so it can be synchronous
                     wrappedBiConsumer = (data, messageAttributes) -> {
-                      Bukkit.getScheduler().runTask(plugin, () -> {
-                        biConsumer.accept(data, messageAttributes);
-                      });
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            biConsumer.accept(data, messageAttributes);
+                        });
                     };
-                }else{
+                } else {
                     wrappedBiConsumer = (data, messageAttributes) -> { //prevent RabbitMQ thread stealing
                         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                             biConsumer.accept(data, messageAttributes);
@@ -203,11 +206,11 @@ public abstract class ProtonManager {
                     };
                 }
 
-                if(this.primitiveMapping.containsKey(parameterClass)){
+                if (this.primitiveMapping.containsKey(parameterClass)) {
                     parameterClass = this.primitiveMapping.get(parameterClass);
                 }
 
-                if(!this.contextClassMap.containsKey(context)){
+                if (!this.contextClassMap.containsKey(context)) {
                     this.contextClassMap.put(context, parameterClass);
                     this.messageHandlers.put(context, wrappedBiConsumer);
                     try {
@@ -215,10 +218,10 @@ public abstract class ProtonManager {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }else{
-                    if(!this.contextClassMap.get(context).equals(parameterClass)){
+                } else {
+                    if (!this.contextClassMap.get(context).equals(parameterClass)) {
                         throw new RegisterMessageHandlerException("MessageContext already has defined data type");
-                    }else{
+                    } else {
                         this.messageHandlers.put(context, wrappedBiConsumer);
                     }
                 }
@@ -226,31 +229,28 @@ public abstract class ProtonManager {
         }
     }
 
-    protected Logger getLogger(){
+    protected Logger getLogger() {
         return Proton.pluginLogger();
     }
 
     /**
-     *
      * @return String This returns the client name of the server you're acting on. Names are used to direct messages
      */
-    public String getClientName(){
+    public String getClientName() {
         return this.name;
     }
 
     /**
-     *
      * @return UUID This returns the unique ID for this client.
      */
-    public UUID getClientID(){
+    public UUID getClientID() {
         return this.id;
     }
 
     /**
-     *
      * @return String This returns the list of groups this client belongs to
      */
-    public String[] getClientGroups(){
+    public String[] getClientGroups() {
         return this.groups;
     }
 

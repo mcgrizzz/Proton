@@ -18,7 +18,7 @@ public class Proton extends JavaPlugin {
     private static final int BSTATS_PLUGIN_ID = 9866;
 
     @Override
-    public void onEnable(){
+    public void onEnable() {
 
         logger = new PluginLogger(this);
 
@@ -27,7 +27,7 @@ public class Proton extends JavaPlugin {
         saveConfig();
 
         String clientName = config.getString("identification.clientName");
-        if(clientName == null){
+        if (clientName == null) {
             logger.log(Level.SEVERE, "The clientName must be set.");
             getServer().getPluginManager().disablePlugin(this);
             return;
@@ -35,7 +35,7 @@ public class Proton extends JavaPlugin {
 
         String[] groups = config.getStringList("identification.groups").toArray(new String[0]);
 
-        if(!verifyIdentification(clientName, groups)){
+        if (!verifyIdentification(clientName, groups)) {
             logger.log(Level.SEVERE, "The clientName/groups cannot contain `.` - Shutting down.");
             getServer().getPluginManager().disablePlugin(this);
             return;
@@ -43,7 +43,7 @@ public class Proton extends JavaPlugin {
 
         boolean useRabbitMQ = config.getBoolean("rabbitMQ.useRabbitMQ");
         boolean useRedis = config.getBoolean("redis.useRedis");
-        if(useRabbitMQ){
+        if (useRabbitMQ) {
             try {
                 setupRabbitMQ(clientName, groups);
             } catch (IOException | TimeoutException e) {
@@ -51,9 +51,9 @@ public class Proton extends JavaPlugin {
                 getServer().getPluginManager().disablePlugin(this);
                 return;
             }
-        }else if(useRedis){
+        } else if (useRedis) {
             setupRedis(clientName, groups);
-        }else{
+        } else {
             logger.log(Level.SEVERE, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
             getServer().getPluginManager().disablePlugin(this);
             return;
@@ -61,7 +61,7 @@ public class Proton extends JavaPlugin {
 
         boolean bStats = config.getBoolean("bStatsEnabled");
 
-        if(bStats){
+        if (bStats) {
             new Metrics(this, BSTATS_PLUGIN_ID);
         }
     }
@@ -72,35 +72,35 @@ public class Proton extends JavaPlugin {
         int port = getConfig().getInt("rabbitMQ.port");
         boolean useAuthorization = getConfig().getBoolean("rabbitMQ.authorization.useAuthorization");
 
-        if(!useAuthorization){
+        if (!useAuthorization) {
             manager = new RabbitMQManager(clientName, groups, host, virtualHost, port);
-        }else{
+        } else {
             String username = getConfig().getString("rabbitMQ.authorization.username");
             String password = getConfig().getString("rabbitMQ.authorization.password");
             manager = new RabbitMQManager(clientName, groups, host, virtualHost, port, username, password);
         }
     }
 
-    private void setupRedis(String clientName, String[] groups){
+    private void setupRedis(String clientName, String[] groups) {
         String host = getConfig().getString("redis.host");
         int port = getConfig().getInt("redis.port");
         boolean usePassword = getConfig().getBoolean("redis.usePassword");
 
-        if(!usePassword){
+        if (!usePassword) {
             manager = new RedisManager(clientName, groups, host, port);
-        }else{
+        } else {
             String password = getConfig().getString("redis.password");
             manager = new RedisManager(clientName, groups, host, port, password);
         }
     }
 
-    private boolean verifyIdentification(String clientName, String[] groups){
-        if(clientName.contains("\\.")){
+    private boolean verifyIdentification(String clientName, String[] groups) {
+        if (clientName.contains("\\.")) {
             return false;
         }
 
-        for(String group : groups){
-            if(group.contains("\\.")){
+        for (String group : groups) {
+            if (group.contains("\\.")) {
                 return false;
             }
         }
@@ -118,15 +118,15 @@ public class Proton extends JavaPlugin {
     /**
      * @return ProtonManager An instance of ProtonManager
      */
-    public static ProtonManager getProtonManager(){
+    public static ProtonManager getProtonManager() {
         return manager;
     }
 
-    protected static void setPluginLogger(Logger newLogger){
+    protected static void setPluginLogger(Logger newLogger) {
         logger = newLogger;
     }
 
-    protected static Logger pluginLogger(){
+    protected static Logger pluginLogger() {
         return logger;
     }
 }

@@ -15,13 +15,13 @@ public class RedisChannel {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return this.context.toContextString() + "." + this.recipient;
     }
 
-    public static RedisChannel fromString(String s){
+    public static RedisChannel fromString(String s) {
         String[] l = s.split("\\.");
-        if(l.length < 2 || l.length > 3){
+        if (l.length < 2 || l.length > 3) {
             throw new IllegalArgumentException();
         }
         MessageContext context = new MessageContext(l[0], l[1]);

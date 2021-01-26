@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class RedisDataWrapper {
-    
+
     //class to store metadata
     final public String senderName;
     final public UUID senderID;

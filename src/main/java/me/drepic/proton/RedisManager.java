@@ -39,9 +39,9 @@ public class RedisManager extends ProtonManager {
 
     @Override
     protected void connect() {
-        if(this.password.isEmpty()){
+        if (this.password.isEmpty()) {
             this.client = RedisClient.create(RedisURI.Builder.redis(this.host, this.port).build());
-        }else{
+        } else {
             this.client = RedisClient.create(RedisURI.Builder.redis(this.host, this.port).withPassword(this.password.toCharArray()).build());
         }
 
@@ -54,19 +54,24 @@ public class RedisManager extends ProtonManager {
             }
 
             @Override
-            public void message(String s, String k1, String s2) {}
+            public void message(String s, String k1, String s2) {
+            }
 
             @Override
-            public void subscribed(String s, long l) {}
+            public void subscribed(String s, long l) {
+            }
 
             @Override
-            public void psubscribed(String s, long l) {}
+            public void psubscribed(String s, long l) {
+            }
 
             @Override
-            public void unsubscribed(String s, long l) { }
+            public void unsubscribed(String s, long l) {
+            }
 
             @Override
-            public void punsubscribed(String s, long l) {}
+            public void punsubscribed(String s, long l) {
+            }
 
         });
 
@@ -75,7 +80,7 @@ public class RedisManager extends ProtonManager {
 
     }
 
-    protected void deliveryCallback(String channelString, String json){
+    protected void deliveryCallback(String channelString, String json) {
         RedisChannel channel = RedisChannel.fromString(channelString);
         MessageContext context = channel.context;
         RedisDataWrapper wrapper = gson.fromJson(json, RedisDataWrapper.class);
@@ -83,28 +88,28 @@ public class RedisManager extends ProtonManager {
         String senderName = wrapper.senderName;
         UUID senderID = wrapper.senderID;
 
-        if(senderID.equals(this.id) && recipient.isEmpty()){ //Implies this was a broadcast from us. Ignore
+        if (senderID.equals(this.id) && recipient.isEmpty()) { //Implies this was a broadcast from us. Ignore
             return;                                          //Conversely, we don't want to ignore messages we
         }                                                    //purposefully sent ourself
 
-        if(!this.contextClassMap.containsKey(context)){ //Someone sent something to us that we're not listening for
+        if (!this.contextClassMap.containsKey(context)) { //Someone sent something to us that we're not listening for
             getLogger().warning("Received message that has no registered handlers.");
             return;
         }
 
         Class type = this.contextClassMap.get(context);
         String data = new String(wrapper.data, StandardCharsets.UTF_8);
-        try{
+        try {
             Object body = gson.fromJson(data, type);
             MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
             this.messageHandlers.get(context).forEach((biConsumer) -> {
-                try{
+                try {
                     biConsumer.accept(body, messageAttributes);
-                }catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
