@@ -64,6 +64,17 @@ public class Proton extends JavaPlugin {
         if (bStats) {
             new Metrics(this, BSTATS_PLUGIN_ID);
         }
+
+        boolean checkForUpdates = config.getBoolean("checkForUpdates");
+
+        if (checkForUpdates) {
+            try {
+                new UpdateChecker(getDescription().getVersion());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     private void setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
