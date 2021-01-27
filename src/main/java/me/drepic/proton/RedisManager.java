@@ -2,10 +2,10 @@ package me.drepic.proton;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
-import me.drepic.proton.message.MessageAttributes;
 import me.drepic.proton.message.MessageContext;
 import me.drepic.proton.redis.RedisChannel;
 import me.drepic.proton.redis.RedisDataWrapper;
@@ -30,7 +30,7 @@ public class RedisManager extends ProtonManager {
         this.host = host;
         this.port = port;
         this.password = password;
-        connect();
+        this.connect();
     }
 
     protected RedisManager(String name, String[] groups, String host, int port) {
@@ -47,33 +47,15 @@ public class RedisManager extends ProtonManager {
 
         subConnection = client.connectPubSub();
         pubConnection = client.connectPubSub();
-        subConnection.addListener(new RedisPubSubListener<String, String>() {
+
+        RedisPubSubListener<String, String> listener = new RedisPubSubAdapter<String, String>() {
             @Override
             public void message(String channel, String data) {
                 deliveryCallback(channel, data);
             }
+        };
 
-            @Override
-            public void message(String s, String k1, String s2) {
-            }
-
-            @Override
-            public void subscribed(String s, long l) {
-            }
-
-            @Override
-            public void psubscribed(String s, long l) {
-            }
-
-            @Override
-            public void unsubscribed(String s, long l) {
-            }
-
-            @Override
-            public void punsubscribed(String s, long l) {
-            }
-
-        });
+        subConnection.addListener(listener);
 
         subCommands = subConnection.sync();
         pubCommands = pubConnection.sync();
@@ -84,34 +66,14 @@ public class RedisManager extends ProtonManager {
         RedisChannel channel = RedisChannel.fromString(channelString);
         MessageContext context = channel.context;
         RedisDataWrapper wrapper = gson.fromJson(json, RedisDataWrapper.class);
+
+        String jsonData = new String(wrapper.data, StandardCharsets.UTF_8);
+
         String recipient = channel.recipient;
         String senderName = wrapper.senderName;
         UUID senderID = wrapper.senderID;
 
-        if (senderID.equals(this.id) && recipient.isEmpty()) { //Implies this was a broadcast from us. Ignore
-            return;                                          //Conversely, we don't want to ignore messages we
-        }                                                    //purposefully sent ourself
-
-        if (!this.contextClassMap.containsKey(context)) { //Someone sent something to us that we're not listening for
-            getLogger().warning("Received message that has no registered handlers.");
-            return;
-        }
-
-        Class type = this.contextClassMap.get(context);
-        String data = new String(wrapper.data, StandardCharsets.UTF_8);
-        try {
-            Object body = gson.fromJson(data, type);
-            MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
-            this.messageHandlers.get(context).forEach((biConsumer) -> {
-                try {
-                    biConsumer.accept(body, messageAttributes);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        notifyHandlers(recipient, senderName, senderID, context, jsonData);
     }
 
     @Override

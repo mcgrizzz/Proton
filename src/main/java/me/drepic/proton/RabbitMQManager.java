@@ -61,7 +61,7 @@ public class RabbitMQManager extends ProtonManager {
     }
 
     protected void deliverCallback(String consumerTag, Delivery delivery) {
-        String msg = new String(delivery.getBody(), StandardCharsets.UTF_8);
+        String jsonData = new String(delivery.getBody(), StandardCharsets.UTF_8);
         String contextString = delivery.getProperties().getHeaders().get("messageContext").toString();
         MessageContext context;
         try {
@@ -75,29 +75,7 @@ public class RabbitMQManager extends ProtonManager {
         String senderName = delivery.getProperties().getHeaders().get("x-senderName").toString();
         UUID senderID = UUID.fromString(delivery.getProperties().getHeaders().get("x-senderID").toString());
 
-        if (senderID.equals(this.id) && recipient.isEmpty()) { //Implies this was a broadcast from us. Ignore
-            return;                                          //Conversely, we don't want to ignore messages we
-        }                                                    //purposefully sent ourself
-
-        if (!this.contextClassMap.containsKey(context)) { //Someone sent something to us that we're not listening for
-            getLogger().warning("Received message that has no registered handlers.");
-            return;
-        }
-
-        Class type = this.contextClassMap.get(context);
-        try {
-            Object body = gson.fromJson(msg, type);
-            MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
-            this.messageHandlers.get(context).forEach((biConsumer) -> {
-                try {
-                    biConsumer.accept(body, messageAttributes);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        notifyHandlers(recipient, senderName, senderID, context, jsonData);
     }
 
     @Override
@@ -134,7 +112,6 @@ public class RabbitMQManager extends ProtonManager {
 
     @Override
     protected void broadcastData(String sender, UUID senderID, MessageContext context, byte[] data) throws IOException {
-
         Map<String, Object> headers = new HashMap<>();
         AMQP.BasicProperties.Builder propBuilder = new AMQP.BasicProperties.Builder();
 
