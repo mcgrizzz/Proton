@@ -43,20 +43,24 @@ public class Proton extends JavaPlugin {
 
         boolean useRabbitMQ = config.getBoolean("rabbitMQ.useRabbitMQ");
         boolean useRedis = config.getBoolean("redis.useRedis");
+
+        if (!useRabbitMQ && !useRedis) {
+            logger.log(Level.SEVERE, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         if (useRabbitMQ) {
             try {
                 setupRabbitMQ(clientName, groups);
             } catch (IOException | TimeoutException e) {
                 e.printStackTrace();
+                logger.severe("Failed to setup RabbitMQ Connection");
                 getServer().getPluginManager().disablePlugin(this);
                 return;
             }
-        } else if (useRedis) {
-            setupRedis(clientName, groups);
         } else {
-            logger.log(Level.SEVERE, "Neither RabbitMQ nor Redis is enabled. Shutting down.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
+            setupRedis(clientName, groups);
         }
 
         boolean bStats = config.getBoolean("bStatsEnabled");
@@ -74,7 +78,6 @@ public class Proton extends JavaPlugin {
                 e.printStackTrace();
             }
         }
-
     }
 
     private void setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
