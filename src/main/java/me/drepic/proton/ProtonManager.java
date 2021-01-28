@@ -32,8 +32,8 @@ public abstract class ProtonManager {
     protected final String[] groups; //The groups the client belongs to
     protected final UUID id; //Guaranteed unique, used to prevent broadcast to self
 
-    protected final ConcurrentHashMap<MessageContext, Class> contextClassMap;
-    protected final Map<Class, Class> primitiveMapping;
+    protected final ConcurrentHashMap<MessageContext, Class<?>> contextClassMap;
+    protected final Map<Class<?>, Class<?>> primitiveMapping;
     protected final ListMultimap<MessageContext, BiConsumer<Object, MessageAttributes>> messageHandlers;
 
     protected final Gson gson;
@@ -44,7 +44,7 @@ public abstract class ProtonManager {
         this.id = UUID.randomUUID();
         this.contextClassMap = new ConcurrentHashMap<>();
         this.messageHandlers = Multimaps.synchronizedListMultimap(ArrayListMultimap.create()); //Thread-safe update operations
-        this.primitiveMapping = ImmutableMap.<Class, Class>builder()
+        this.primitiveMapping = ImmutableMap.<Class<?>, Class<?>>builder()
                 .put(Byte.TYPE, Byte.class)
                 .put(Short.TYPE, Short.class)
                 .put(Integer.TYPE, Integer.class)
@@ -226,6 +226,32 @@ public abstract class ProtonManager {
                     }
                 }
             }
+        }
+    }
+
+    protected void notifyHandlers(String recipient, String senderName, UUID senderID, MessageContext context, String jsonData){
+        if (senderID.equals(this.id) && recipient.isEmpty()) { //Implies this was a broadcast from us. Ignore
+            return;                                            //Conversely, we don't want to ignore messages we
+        }                                                      //purposefully sent ourself
+
+        if (!this.contextClassMap.containsKey(context)) { //Someone sent something to us that we're not listening for
+            getLogger().warning("Received message that has no registered handlers.");
+            return;
+        }
+
+        Class<?> type = this.contextClassMap.get(context);
+        try {
+            Object body = gson.fromJson(jsonData, type);
+            MessageAttributes messageAttributes = new MessageAttributes(context.getNamespace(), context.getSubject(), senderName, senderID);
+            this.messageHandlers.get(context).forEach((biConsumer) -> {
+                try {
+                    biConsumer.accept(body, messageAttributes);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
