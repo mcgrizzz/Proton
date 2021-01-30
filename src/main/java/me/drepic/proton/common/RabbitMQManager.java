@@ -1,6 +1,7 @@
 package me.drepic.proton.common;
 
 import com.rabbitmq.client.*;
+import me.drepic.proton.common.adapters.SchedulerAdapter;
 import me.drepic.proton.common.message.MessageContext;
 
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 
 public class RabbitMQManager extends ProtonManager {
 
@@ -24,6 +26,16 @@ public class RabbitMQManager extends ProtonManager {
 
     RabbitMQManager(Proton proton, String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
         super(proton, name, groups);
+        this.host = host;
+        this.virtualHost = virtualHost;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.connect();
+    }
+
+    RabbitMQManager(SchedulerAdapter scheduler, Logger logger, String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
+        super(scheduler, logger, name, groups);
         this.host = host;
         this.virtualHost = virtualHost;
         this.port = port;

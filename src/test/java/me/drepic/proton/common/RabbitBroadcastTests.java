@@ -34,7 +34,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         waiter.await(1000, 2);
     }
@@ -57,7 +57,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // Wait for sync threads to get added to Bukkit from RabbitMQ
         Thread.sleep(500);
@@ -83,7 +83,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // Wait for sync threads to get added to Bukkit from RabbitMQ
         Thread.sleep(500);
@@ -104,8 +104,8 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, sharedHandler);
-        client2ProtonManager.registerMessageHandlers(proton, sharedHandler);
+        client1ProtonManager.registerMessageHandlers(sharedHandler);
+        client2ProtonManager.registerMessageHandlers(sharedHandler);
         client3ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         waiter.await(1000, 2);
         client3ProtonManager.tearDown();
@@ -120,7 +120,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.fail("Broadcast should not be sent to sender");
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client1ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // This is hacky, but it is difficult to test for a lack of an async task
         Thread.sleep(500);
@@ -137,7 +137,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.fail("Broadcast should not be sent to incorrect namespace");
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // This is hacky, but it is difficult to test for a lack of an async task
         Thread.sleep(500);
@@ -154,7 +154,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.fail("Broadcast should not be sent to incorrect subject");
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // This is hacky, but it is difficult to test for a lack of an async task
         Thread.sleep(500);
@@ -169,7 +169,7 @@ class RabbitBroadcastTests extends RabbitTests {
             public void recv(String recvStr) {
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         assertThatThrownBy(() -> client1ProtonManager.broadcast(NAMESPACE, SUBJECT, 12L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Trying to send the wrong datatype for an already defined MessageContext");
@@ -183,7 +183,7 @@ class RabbitBroadcastTests extends RabbitTests {
             public void recv(int recvInt) {
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // No exception thrown, but an error is logged
         Thread.sleep(500);
@@ -199,7 +199,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myInt);
         waiter.await(1000, 1);
     }
@@ -220,7 +220,7 @@ class RabbitBroadcastTests extends RabbitTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myInt);
         waiter.await(1000, 2);
     }
@@ -236,7 +236,7 @@ class RabbitBroadcastTests extends RabbitTests {
             }
         };
 
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, data);
         waiter.await(1000, 1);
     }

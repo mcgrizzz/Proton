@@ -1,11 +1,9 @@
 package me.drepic.proton.common;
 
 import be.seeseemelk.mockbukkit.MockBukkit;
+import be.seeseemelk.mockbukkit.MockPlugin;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.scheduler.BukkitSchedulerMock;
-import me.drepic.proton.ProtonOLD;
-import me.drepic.proton.common.ProtonManager;
-import me.drepic.proton.common.RabbitMQManager;
 import net.jodah.concurrentunit.Waiter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests the ProtonManager. Requires that rabbitmq is running on localhost.
@@ -43,21 +39,28 @@ class RabbitTests {
     static final String NAMESPACE = "test-namespace";
     static final String SUBJECT = "test-subject";
 
-    ProtonOLD proton;
+    MockPlugin plugin;
     ProtonManager client1ProtonManager;
     ProtonManager client2ProtonManager;
+
+    Logger logger;
     BukkitSchedulerMock scheduler;
+    MockBukkitSchedulerAdapter schedulerAdapter;
     Waiter waiter;
 
     public ProtonManager createManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
-        return new RabbitMQManager(name, groups, host, virtualHost, port, username, password);
+        return new RabbitMQManager(schedulerAdapter, logger, name, groups, host, virtualHost, port, username, password);
     }
 
     @BeforeEach
     public void setUp() throws Exception {
         ServerMock server = MockBukkit.mock();
+        plugin = MockBukkit.createMockPlugin();
+
+        this.logger = Logger.getLogger("proton");
         scheduler = server.getScheduler();
-        ProtonOLD.setPluginLogger(Logger.getLogger("proton"));
+        schedulerAdapter = new MockBukkitSchedulerAdapter(scheduler, plugin);
+
         client1ProtonManager = createManager(CLIENT_1_NAME, CLIENT_1_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         client2ProtonManager = createManager(CLIENT_2_NAME, CLIENT_2_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         waiter = new Waiter();

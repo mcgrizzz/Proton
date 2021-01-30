@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.gson.Gson;
+import me.drepic.proton.common.adapters.SchedulerAdapter;
 import me.drepic.proton.common.exception.MessageSendException;
 import me.drepic.proton.common.exception.RegisterMessageHandlerException;
 import me.drepic.proton.common.message.MessageAttributes;
@@ -37,10 +38,12 @@ public abstract class ProtonManager {
 
     protected final Gson gson;
 
-    protected final Proton proton;
+    protected final SchedulerAdapter scheduler;
+    protected final Logger logger;
 
-    protected ProtonManager(Proton proton, String name, String[] groups) {
-        this.proton = proton;
+    protected ProtonManager(SchedulerAdapter scheduler, Logger logger, String name, String[] groups){
+        this.scheduler = scheduler;
+        this.logger = logger;
         this.name = name;
         this.groups = groups;
         this.id = UUID.randomUUID();
@@ -57,6 +60,10 @@ public abstract class ProtonManager {
                 .put(Character.TYPE, Character.class).build();
 
         gson = new Gson();
+    }
+
+    protected ProtonManager(Proton proton, String name, String[] groups) {
+        this(proton.getBootstrap().getScheduler(), proton.getBootstrap().getPluginLogger(), name, groups);
     }
 
     /**
@@ -150,13 +157,13 @@ public abstract class ProtonManager {
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler when the MessageContext contains the restricted `.` (period)
      * @throws RegisterMessageHandlerException When trying to register a MessageHandler with the incorrect amount of parameters
      */
-    public void registerMessageHandlers(Plugin plugin, Object... objects) {
+    public void registerMessageHandlers(Object... objects) {
         for (Object obj : objects) {
-            registerMessageHandler(plugin, obj);
+            registerMessageHandler(obj);
         }
     }
 
-    private void registerMessageHandler(Plugin plugin, Object object) {
+    private void registerMessageHandler(Object object) {
         Class<?> klass = object.getClass();
         for (final Method method : klass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(MessageHandler.class)) {
@@ -196,13 +203,13 @@ public abstract class ProtonManager {
                 BiConsumer<Object, MessageAttributes> wrappedBiConsumer;
                 if (!handlerAnnotation.async()) { //Wrap the BiConsumer so it can be synchronous
                     wrappedBiConsumer = (data, messageAttributes) -> {
-                        this.proton.getBootstrap().getScheduler().runTask(() -> {
+                        getScheduler().runTask(() -> {
                             biConsumer.accept(data, messageAttributes);
                         });
                     };
                 } else {
                     wrappedBiConsumer = (data, messageAttributes) -> { //prevent RabbitMQ thread stealing
-                        this.proton.getBootstrap().getScheduler().runTaskAsynchronously(() -> {
+                        getScheduler().runTaskAsynchronously(() -> {
                             biConsumer.accept(data, messageAttributes);
                         });
                     };
@@ -257,8 +264,12 @@ public abstract class ProtonManager {
         }
     }
 
+    protected SchedulerAdapter getScheduler(){
+        return this.scheduler;
+    }
+
     protected Logger getLogger() {
-        return this.proton.getBootstrap().getPluginLogger();
+        return this.logger;
     }
 
     /**

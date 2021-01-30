@@ -1,9 +1,9 @@
 package me.drepic.proton.common;
 
 import be.seeseemelk.mockbukkit.MockBukkit;
+import be.seeseemelk.mockbukkit.MockPlugin;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.scheduler.BukkitSchedulerMock;
-import me.drepic.proton.ProtonOLD;
 import net.jodah.concurrentunit.Waiter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,21 +29,28 @@ public class RedisTests {
     static final String NAMESPACE = "test-namespace";
     static final String SUBJECT = "test-subject";
 
-    ProtonOLD proton;
+    MockPlugin plugin;
     ProtonManager client1ProtonManager;
     ProtonManager client2ProtonManager;
+
+    Logger logger;
     BukkitSchedulerMock scheduler;
+    MockBukkitSchedulerAdapter schedulerAdapter;
     Waiter waiter;
 
     public ProtonManager createManager(String name, String[] groups) throws Exception {
-        return new RedisManager(name, groups, HOST, PORT, PASSWORD);
+        return new RedisManager(schedulerAdapter, logger, name, groups, HOST, PORT, PASSWORD);
     }
 
     @BeforeEach
     public void setUp() throws Exception {
         ServerMock server = MockBukkit.mock();
+        plugin = MockBukkit.createMockPlugin();
+
+        this.logger = Logger.getLogger("proton");
         scheduler = server.getScheduler();
-        ProtonOLD.setPluginLogger(Logger.getLogger("proton"));
+        schedulerAdapter = new MockBukkitSchedulerAdapter(scheduler, plugin);
+
         client1ProtonManager = createManager(CLIENT_1_NAME, CLIENT_1_GROUPS);
         client2ProtonManager = createManager(CLIENT_2_NAME, CLIENT_2_GROUPS);
         waiter = new Waiter();

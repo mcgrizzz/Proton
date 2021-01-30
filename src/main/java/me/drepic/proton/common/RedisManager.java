@@ -6,12 +6,14 @@ import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
+import me.drepic.proton.common.adapters.SchedulerAdapter;
 import me.drepic.proton.common.message.MessageContext;
 import me.drepic.proton.common.redis.RedisChannel;
 import me.drepic.proton.common.redis.RedisDataWrapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class RedisManager extends ProtonManager {
 
@@ -27,6 +29,14 @@ public class RedisManager extends ProtonManager {
 
     protected RedisManager(Proton proton, String name, String[] groups, String host, int port, String password) {
         super(proton, name, groups);
+        this.host = host;
+        this.port = port;
+        this.password = password;
+        this.connect();
+    }
+
+    protected RedisManager(SchedulerAdapter scheduler, Logger logger, String name, String[] groups, String host, int port, String password){
+        super(scheduler, logger, name, groups);
         this.host = host;
         this.port = port;
         this.password = password;

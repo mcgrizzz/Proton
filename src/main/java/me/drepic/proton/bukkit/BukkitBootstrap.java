@@ -4,8 +4,11 @@ import me.drepic.proton.common.adapters.ConfigAdapter;
 import me.drepic.proton.common.Proton;
 import me.drepic.proton.common.ProtonBootstrap;
 import me.drepic.proton.common.adapters.SchedulerAdapter;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.java.JavaPluginLoader;
 
+import java.io.File;
 import java.util.logging.Logger;
 
 public class BukkitBootstrap extends JavaPlugin implements ProtonBootstrap {
@@ -13,6 +16,14 @@ public class BukkitBootstrap extends JavaPlugin implements ProtonBootstrap {
     private SchedulerAdapter schedulerAdapter;
     private ConfigAdapter configAdapter;
     private Proton proton;
+
+    public BukkitBootstrap(){
+        super();
+    }
+
+    public BukkitBootstrap(JavaPluginLoader loader, PluginDescriptionFile description, File dataFolder, File file){
+        super(loader, description, dataFolder, file);
+    }
 
     @Override
     public void onEnable() {

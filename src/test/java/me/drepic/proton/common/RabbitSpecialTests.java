@@ -20,7 +20,7 @@ public class RabbitSpecialTests extends RabbitTests {
             }
         };
 
-        assertThatThrownBy(() -> client1ProtonManager.registerMessageHandlers(proton, client1Handler))
+        assertThatThrownBy(() -> client1ProtonManager.registerMessageHandlers(client1Handler))
                 .isInstanceOf(RegisterMessageHandlerException.class)
                 .hasMessage("MessageContext already has defined data type");
 
