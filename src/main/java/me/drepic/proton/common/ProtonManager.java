@@ -1,16 +1,15 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.gson.Gson;
-import me.drepic.proton.exception.MessageSendException;
-import me.drepic.proton.exception.RegisterMessageHandlerException;
-import me.drepic.proton.message.MessageAttributes;
-import me.drepic.proton.message.MessageContext;
-import me.drepic.proton.message.MessageHandler;
-import org.bukkit.Bukkit;
+import me.drepic.proton.common.exception.MessageSendException;
+import me.drepic.proton.common.exception.RegisterMessageHandlerException;
+import me.drepic.proton.common.message.MessageAttributes;
+import me.drepic.proton.common.message.MessageContext;
+import me.drepic.proton.common.message.MessageHandler;
 import org.bukkit.plugin.Plugin;
 
 import java.io.IOException;
@@ -38,7 +37,10 @@ public abstract class ProtonManager {
 
     protected final Gson gson;
 
-    protected ProtonManager(String name, String[] groups) {
+    protected final Proton proton;
+
+    protected ProtonManager(Proton proton, String name, String[] groups) {
+        this.proton = proton;
         this.name = name;
         this.groups = groups;
         this.id = UUID.randomUUID();
@@ -120,7 +122,7 @@ public abstract class ProtonManager {
      * @param data      This is the data you want to send. It must be JSON serializable
      * @throws IllegalArgumentException When trying to send the wrong datatype given a defined {@link MessageContext}
      * @throws MessageSendException     When unable to send the message
-     * @see me.drepic.proton.ProtonManager#send
+     * @see ProtonManager#send
      */
     public void broadcast(String namespace, String subject, Object data) {
         if (namespace.contains("\\.") || subject.contains("\\.")) {
@@ -194,13 +196,13 @@ public abstract class ProtonManager {
                 BiConsumer<Object, MessageAttributes> wrappedBiConsumer;
                 if (!handlerAnnotation.async()) { //Wrap the BiConsumer so it can be synchronous
                     wrappedBiConsumer = (data, messageAttributes) -> {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
+                        this.proton.getBootstrap().getScheduler().runTask(() -> {
                             biConsumer.accept(data, messageAttributes);
                         });
                     };
                 } else {
                     wrappedBiConsumer = (data, messageAttributes) -> { //prevent RabbitMQ thread stealing
-                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                        this.proton.getBootstrap().getScheduler().runTaskAsynchronously(() -> {
                             biConsumer.accept(data, messageAttributes);
                         });
                     };
@@ -256,7 +258,7 @@ public abstract class ProtonManager {
     }
 
     protected Logger getLogger() {
-        return Proton.pluginLogger();
+        return this.proton.getBootstrap().getPluginLogger();
     }
 
     /**

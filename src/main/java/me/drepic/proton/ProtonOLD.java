@@ -1,5 +1,9 @@
 package me.drepic.proton;
 
+import me.drepic.proton.common.ProtonManager;
+import me.drepic.proton.common.RabbitMQManager;
+import me.drepic.proton.common.RedisManager;
+import me.drepic.proton.common.UpdateChecker;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.PluginLogger;
@@ -10,9 +14,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Proton extends JavaPlugin {
+public class ProtonOLD extends JavaPlugin {
 
-    private static ProtonManager manager;
+   /* private static ProtonManager manager;
     private static Logger logger;
 
     private static final int BSTATS_PLUGIN_ID = 9866;
@@ -142,5 +146,5 @@ public class Proton extends JavaPlugin {
 
     protected static Logger pluginLogger() {
         return logger;
-    }
+    }*/
 }

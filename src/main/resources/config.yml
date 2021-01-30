@@ -16,6 +16,5 @@ redis:
 identification:
   clientName: "client1"
   groups: []
-bStatsEnabled: true
 checkForUpdates: true
 

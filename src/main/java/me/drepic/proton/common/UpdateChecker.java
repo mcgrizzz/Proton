@@ -1,4 +1,4 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -16,7 +16,10 @@ public class UpdateChecker {
     private final String ANSI_GREEN = "\u001B[32m";
     private final String ANSI_RESET = "\u001B[0m";
 
-    public UpdateChecker(String version) throws IOException {
+    private final Proton proton;
+
+    public UpdateChecker(Proton proton, String version) throws IOException {
+        this.proton = proton;
         CompletableFuture<String> getRequest = CompletableFuture.supplyAsync(() -> {
             try {
                 return getLatestVersion();
@@ -37,11 +40,11 @@ public class UpdateChecker {
             String remoteVersion = remoteVersionName.startsWith("v") ? remoteVersionName.substring(1) : remoteVersionName;
             
             if (needsUpdate(localVersion, remoteVersion)) {
-                Proton.pluginLogger().log(Level.INFO,
+                this.proton.getBootstrap().getPluginLogger().log(Level.INFO,
                         String.format("New version available for Proton: [v%s] -> [%sv%s%s]", localVersion, ANSI_GREEN, remoteVersion, ANSI_RESET)
                 );
             } else {
-                Proton.pluginLogger().log(Level.INFO,
+                this.proton.getBootstrap().getPluginLogger().log(Level.INFO,
                         String.format("Current version is up-to-date: [v%s]", localVersion)
                 );
             }

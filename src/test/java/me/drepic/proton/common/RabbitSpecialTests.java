@@ -1,7 +1,7 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
-import me.drepic.proton.exception.RegisterMessageHandlerException;
-import me.drepic.proton.message.MessageHandler;
+import me.drepic.proton.common.exception.RegisterMessageHandlerException;
+import me.drepic.proton.common.message.MessageHandler;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

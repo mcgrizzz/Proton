@@ -1,4 +1,4 @@
-package me.drepic.proton.redis;
+package me.drepic.proton.common.redis;
 
 import java.util.Arrays;
 import java.util.UUID;

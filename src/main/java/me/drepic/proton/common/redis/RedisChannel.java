@@ -1,6 +1,6 @@
-package me.drepic.proton.redis;
+package me.drepic.proton.common.redis;
 
-import me.drepic.proton.message.MessageContext;
+import me.drepic.proton.common.message.MessageContext;
 
 public class RedisChannel {
 

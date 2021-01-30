@@ -1,7 +1,7 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
-import me.drepic.proton.message.MessageAttributes;
-import me.drepic.proton.message.MessageHandler;
+import me.drepic.proton.common.message.MessageAttributes;
+import me.drepic.proton.common.message.MessageHandler;
 import org.bukkit.Bukkit;
 import org.junit.jupiter.api.Test;
 
