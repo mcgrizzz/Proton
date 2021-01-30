@@ -5,7 +5,7 @@ import me.drepic.proton.common.adapters.SchedulerAdapter;
 
 import java.util.logging.Logger;
 
-public interface ProtonBootstrap {
+public interface ProtonBootstraper {
 
     Logger getPluginLogger();
 

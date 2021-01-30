@@ -7,15 +7,16 @@ import java.util.List;
 
 public class BukkitConfigAdapter implements ConfigAdapter {
 
-    JavaPlugin plugin;
+    private JavaPlugin plugin;
 
-    public BukkitConfigAdapter(JavaPlugin plugin){
+    public BukkitConfigAdapter(JavaPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public void saveDefault() {
         this.plugin.getConfig().options().copyDefaults(true);
+        this.plugin.saveConfig();
     }
 
     @Override

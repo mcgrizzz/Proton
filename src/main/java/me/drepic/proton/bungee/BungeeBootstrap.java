@@ -1,23 +1,23 @@
-package me.drepic.proton.bukkit;
+package me.drepic.proton.bungee;
 
 import me.drepic.proton.common.Proton;
 import me.drepic.proton.common.ProtonBootstraper;
 import me.drepic.proton.common.adapters.ConfigAdapter;
 import me.drepic.proton.common.adapters.SchedulerAdapter;
-import org.bukkit.plugin.java.JavaPlugin;
+import net.md_5.bungee.api.plugin.Plugin;
 
 import java.util.logging.Logger;
 
-public class BukkitBootstrap extends JavaPlugin implements ProtonBootstraper {
+public class BungeeBootstrap extends Plugin implements ProtonBootstraper {
 
-    private BukkitSchedulerAdapter schedulerAdapter;
-    private BukkitConfigAdapter configAdapter;
+    private BungeeSchedulerAdapter schedulerAdapter;
+    private BungeeConfigAdapter configAdapter;
     private Proton proton;
 
     @Override
     public void onEnable() {
-        this.schedulerAdapter = new BukkitSchedulerAdapter(this);
-        this.configAdapter = new BukkitConfigAdapter(this);
+        this.schedulerAdapter = new BungeeSchedulerAdapter(this);
+        this.configAdapter = new BungeeConfigAdapter(this);
         this.proton = new Proton(this);
         this.proton.enable();
     }
@@ -26,16 +26,6 @@ public class BukkitBootstrap extends JavaPlugin implements ProtonBootstraper {
     public void onDisable() {
         this.proton.disable();
     }
-
-    /*
-        Bootstrap methods
-     */
-
-    @Override
-    public void disable() {
-        getServer().getPluginManager().disablePlugin(this);
-    }
-
 
     @Override
     public Logger getPluginLogger() {
@@ -55,5 +45,12 @@ public class BukkitBootstrap extends JavaPlugin implements ProtonBootstraper {
     @Override
     public String getVersion() {
         return getDescription().getVersion();
+    }
+
+    @Override
+    public void disable() {
+        //TODO: No built in way to disable a bungee plugin
+        getLogger().severe("Unable to load Proton! Unloading...");
+        this.onDisable();
     }
 }

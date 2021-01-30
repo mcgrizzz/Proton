@@ -1,5 +1,5 @@
 rabbitMQ:
-  useRabbitMQ: true
+  useRabbitMQ: false
   host: "localhost"
   virtualHost: '/'
   port: 5672

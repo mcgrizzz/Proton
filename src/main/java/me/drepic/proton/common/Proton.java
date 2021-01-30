@@ -9,16 +9,17 @@ import java.util.logging.Logger;
 
 public class Proton {
 
-    private final ProtonBootstrap bootstrap;
+    private final ProtonBootstraper bootstrap;
     private ConfigAdapter config;
 
-    public Proton(ProtonBootstrap bootstrap){
+    public Proton(ProtonBootstraper bootstrap){
         this.bootstrap = bootstrap;
     }
 
     public final void enable(){
         this.config = getBootstrap().getConfiguration();
         this.config.saveDefault();
+        this.config.loadConfig();
 
         Logger logger = getBootstrap().getPluginLogger();
 
@@ -121,7 +122,7 @@ public class Proton {
         return true;
     }
 
-    protected ProtonBootstrap getBootstrap(){
+    protected ProtonBootstraper getBootstrap(){
         return this.bootstrap;
     }
 }

@@ -5,9 +5,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class BukkitSchedulerAdapter implements SchedulerAdapter {
 
-    JavaPlugin plugin;
+    private JavaPlugin plugin;
 
-    protected BukkitSchedulerAdapter(JavaPlugin plugin){
+    protected BukkitSchedulerAdapter(JavaPlugin plugin) {
         this.plugin = plugin;
     }
 
