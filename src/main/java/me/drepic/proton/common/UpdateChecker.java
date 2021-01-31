@@ -61,7 +61,8 @@ public class UpdateChecker {
         for (int i = 0; i < minLen; i++) { //left to right
             int local = Integer.parseInt(localSubversions[i]);
             int remote = Integer.parseInt(remoteSubversions[i]);
-            if (remote > local) return true;
+            if(local > remote)return false;
+            if(local < remote)return true;
         }
 
         return remoteSubversions.length > localSubversions.length;

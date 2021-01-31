@@ -50,7 +50,7 @@ public class BungeeBootstrap extends Plugin implements ProtonBootstraper {
     @Override
     public void disable() {
         //TODO: No built in way to disable a bungee plugin
-        getLogger().severe("Unable to load Proton! Unloading...");
+        getLogger().severe("Disabling...");
         this.onDisable();
     }
 }

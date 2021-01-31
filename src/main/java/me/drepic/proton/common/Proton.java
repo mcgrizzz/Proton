@@ -47,9 +47,10 @@ public class Proton {
             return;
         }
 
+        ProtonManager manager;
         if (useRabbitMQ) {
             try {
-                setupRabbitMQ(clientName, groups);
+                manager = setupRabbitMQ(clientName, groups);
             } catch (IOException | TimeoutException e) {
                 e.printStackTrace();
                 logger.severe("Failed to setup RabbitMQ Connection");
@@ -57,8 +58,10 @@ public class Proton {
                 return;
             }
         } else {
-            setupRedis(clientName, groups);
+            manager = setupRedis(clientName, groups);
         }
+
+        ProtonProvider.register(manager);
 
         boolean checkForUpdates = config.getBoolean("checkForUpdates");
 
@@ -80,31 +83,31 @@ public class Proton {
         }
     }
 
-    private void setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
+    private ProtonManager setupRabbitMQ(String clientName, String[] groups) throws IOException, TimeoutException {
         String host = this.config.getString("rabbitMQ.host");
         String virtualHost = this.config.getString("rabbitMQ.virtualHost");
         int port = this.config.getInt("rabbitMQ.port");
         boolean useAuthorization = this.config.getBoolean("rabbitMQ.authorization.useAuthorization");
 
         if (!useAuthorization) {
-            ProtonProvider.register(new RabbitMQManager(this, clientName, groups, host, virtualHost, port));
+            return new RabbitMQManager(this, clientName, groups, host, virtualHost, port);
         } else {
             String username = this.config.getString("rabbitMQ.authorization.username");
             String password = this.config.getString("rabbitMQ.authorization.password");
-            ProtonProvider.register(new RabbitMQManager(this, clientName, groups, host, virtualHost, port, username, password));
+            return new RabbitMQManager(this, clientName, groups, host, virtualHost, port, username, password);
         }
     }
 
-    private void setupRedis(String clientName, String[] groups) {
+    private ProtonManager setupRedis(String clientName, String[] groups) {
         String host = this.config.getString("redis.host");
         int port = this.config.getInt("redis.port");
         boolean usePassword = this.config.getBoolean("redis.usePassword");
 
         if (!usePassword) {
-            ProtonProvider.register(new RedisManager(this, clientName, groups, host, port));
+            return new RedisManager(this, clientName, groups, host, port);
         } else {
             String password = this.config.getString("redis.password");
-            ProtonProvider.register(new RedisManager(this, clientName, groups, host, port, password));
+            return new RedisManager(this, clientName, groups, host, port, password);
         }
     }
 
