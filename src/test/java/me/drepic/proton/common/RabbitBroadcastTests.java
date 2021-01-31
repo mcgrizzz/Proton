@@ -1,7 +1,7 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
-import me.drepic.proton.message.MessageAttributes;
-import me.drepic.proton.message.MessageHandler;
+import me.drepic.proton.common.message.MessageAttributes;
+import me.drepic.proton.common.message.MessageHandler;
 import org.bukkit.Bukkit;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class RedisBroadcastTests extends RedisTests {
+class RabbitBroadcastTests extends RabbitTests {
 
     @Test
     public void testBroadcast__simpleAsyncValid() throws TimeoutException, InterruptedException {
@@ -34,7 +34,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         waiter.await(1000, 2);
     }
@@ -57,7 +57,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // Wait for sync threads to get added to Bukkit from RabbitMQ
         Thread.sleep(500);
@@ -83,7 +83,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // Wait for sync threads to get added to Bukkit from RabbitMQ
         Thread.sleep(500);
@@ -96,7 +96,7 @@ public class RedisBroadcastTests extends RedisTests {
         String myString = "testBroadcast__multipleReceivers";
         String client3Name = "client3";
         String[] client3Groups = {};
-        ProtonManager client3ProtonManager = createManager(client3Name, client3Groups);
+        ProtonManager client3ProtonManager = createManager(client3Name, client3Groups, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         Object sharedHandler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(String recvStr) {
@@ -104,8 +104,8 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, sharedHandler);
-        client2ProtonManager.registerMessageHandlers(proton, sharedHandler);
+        client1ProtonManager.registerMessageHandlers(sharedHandler);
+        client2ProtonManager.registerMessageHandlers(sharedHandler);
         client3ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         waiter.await(1000, 2);
         client3ProtonManager.tearDown();
@@ -120,7 +120,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.fail("Broadcast should not be sent to sender");
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client1ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // This is hacky, but it is difficult to test for a lack of an async task
         Thread.sleep(500);
@@ -137,7 +137,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.fail("Broadcast should not be sent to incorrect namespace");
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // This is hacky, but it is difficult to test for a lack of an async task
         Thread.sleep(500);
@@ -154,7 +154,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.fail("Broadcast should not be sent to incorrect subject");
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // This is hacky, but it is difficult to test for a lack of an async task
         Thread.sleep(500);
@@ -169,7 +169,7 @@ public class RedisBroadcastTests extends RedisTests {
             public void recv(String recvStr) {
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         assertThatThrownBy(() -> client1ProtonManager.broadcast(NAMESPACE, SUBJECT, 12L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Trying to send the wrong datatype for an already defined MessageContext");
@@ -183,7 +183,7 @@ public class RedisBroadcastTests extends RedisTests {
             public void recv(int recvInt) {
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myString);
         // No exception thrown, but an error is logged
         Thread.sleep(500);
@@ -199,7 +199,7 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myInt);
         waiter.await(1000, 1);
     }
@@ -220,23 +220,23 @@ public class RedisBroadcastTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, myInt);
         waiter.await(1000, 2);
     }
 
     @Test
     public void testBroadcast__complicatedData() throws TimeoutException, InterruptedException {
-        RabbitTests.ComplicatedData data = new RabbitTests.ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a', 'b', 'c', 'd'));
+        ComplicatedData data = new ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a', 'b', 'c', 'd'));
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
-            public void recv(RabbitTests.ComplicatedData recvData) {
+            public void recv(ComplicatedData recvData) {
                 waiter.assertEquals(recvData, data);
                 waiter.resume();
             }
         };
 
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.broadcast(NAMESPACE, SUBJECT, data);
         waiter.await(1000, 1);
     }

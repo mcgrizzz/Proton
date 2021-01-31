@@ -1,4 +1,4 @@
-package me.drepic.proton.message;
+package me.drepic.proton.common.message;
 
 import java.util.Objects;
 

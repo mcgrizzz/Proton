@@ -1,6 +1,7 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
 import be.seeseemelk.mockbukkit.MockBukkit;
+import be.seeseemelk.mockbukkit.MockPlugin;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.scheduler.BukkitSchedulerMock;
 import net.jodah.concurrentunit.Waiter;
@@ -11,8 +12,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-public class RedisTests {
-
+/**
+ * Tests the ProtonManager. Requires that rabbitmq is running on localhost.
+ * <p>
+ * Most tests use Waiter to ensure that the message handlers have been called.
+ * Waiter.await(timeout, N) will throw an exception if N parties have not called resume.
+ * Waiter assertions should be used in any code running in a different thread.
+ * <p>
+ * Most tests use async = true as this does not require manually progressing through server ticks.
+ */
+class RabbitTests {
+    // ProtonManager Config
     static final String COMMON_GROUP = "commonGroup";
     static final String CLIENT_1_NAME = "client1";
     static final String CLIENT_1_GROUP = "client1Group";
@@ -20,31 +30,39 @@ public class RedisTests {
     static final String CLIENT_2_NAME = "client2";
     static final String CLIENT_2_GROUP = "client2Group";
     static final String[] CLIENT_2_GROUPS = {COMMON_GROUP, CLIENT_2_GROUP};
-
-    static final String HOST = System.getenv("REDIS_HOST");
-    static final int PORT = 9949;
-    static final String PASSWORD = System.getenv("REDIS_PASSWORD");
+    static final String HOST = System.getenv("RABBIT_HOST");
+    static final String VIRTUAL_HOST = System.getenv("RABBIT_VHOST");
+    static final int PORT = 5672;
+    static final String USERNAME = System.getenv("RABBIT_USER");
+    static final String PASSWORD = System.getenv("RABBIT_PASS");
 
     static final String NAMESPACE = "test-namespace";
     static final String SUBJECT = "test-subject";
 
-    Proton proton;
+    MockPlugin plugin;
     ProtonManager client1ProtonManager;
     ProtonManager client2ProtonManager;
+
+    Logger logger;
     BukkitSchedulerMock scheduler;
+    MockBukkitSchedulerAdapter schedulerAdapter;
     Waiter waiter;
 
-    public ProtonManager createManager(String name, String[] groups) throws Exception {
-        return new RedisManager(name, groups, HOST, PORT, PASSWORD);
+    public ProtonManager createManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws Exception {
+        return new RabbitMQManager(schedulerAdapter, logger, name, groups, host, virtualHost, port, username, password);
     }
 
     @BeforeEach
     public void setUp() throws Exception {
         ServerMock server = MockBukkit.mock();
+        plugin = MockBukkit.createMockPlugin();
+
+        this.logger = Logger.getLogger("proton");
         scheduler = server.getScheduler();
-        Proton.setPluginLogger(Logger.getLogger("proton"));
-        client1ProtonManager = createManager(CLIENT_1_NAME, CLIENT_1_GROUPS);
-        client2ProtonManager = createManager(CLIENT_2_NAME, CLIENT_2_GROUPS);
+        schedulerAdapter = new MockBukkitSchedulerAdapter(scheduler, plugin);
+
+        client1ProtonManager = createManager(CLIENT_1_NAME, CLIENT_1_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
+        client2ProtonManager = createManager(CLIENT_2_NAME, CLIENT_2_GROUPS, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
         waiter = new Waiter();
     }
 
@@ -82,4 +100,5 @@ public class RedisTests {
             return Objects.hash(a, b, c, d);
         }
     }
+
 }

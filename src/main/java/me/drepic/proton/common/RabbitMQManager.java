@@ -1,8 +1,8 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
 import com.rabbitmq.client.*;
-import me.drepic.proton.message.MessageAttributes;
-import me.drepic.proton.message.MessageContext;
+import me.drepic.proton.common.adapters.SchedulerAdapter;
+import me.drepic.proton.common.message.MessageContext;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 
 public class RabbitMQManager extends ProtonManager {
 
@@ -23,8 +24,8 @@ public class RabbitMQManager extends ProtonManager {
     private final String username;
     private final String password;
 
-    RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
-        super(name, groups);
+    RabbitMQManager(Proton proton, String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
+        super(proton, name, groups);
         this.host = host;
         this.virtualHost = virtualHost;
         this.port = port;
@@ -33,8 +34,18 @@ public class RabbitMQManager extends ProtonManager {
         this.connect();
     }
 
-    RabbitMQManager(String name, String[] groups, String host, String virtualHost, int port) throws IOException, TimeoutException {
-        this(name, groups, host, virtualHost, port, "", "");
+    RabbitMQManager(SchedulerAdapter scheduler, Logger logger, String name, String[] groups, String host, String virtualHost, int port, String username, String password) throws IOException, TimeoutException {
+        super(scheduler, logger, name, groups);
+        this.host = host;
+        this.virtualHost = virtualHost;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+        this.connect();
+    }
+
+    RabbitMQManager(Proton proton, String name, String[] groups, String host, String virtualHost, int port) throws IOException, TimeoutException {
+        this(proton, name, groups, host, virtualHost, port, "", "");
     }
 
     @Override

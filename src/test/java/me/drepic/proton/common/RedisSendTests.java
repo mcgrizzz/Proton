@@ -1,7 +1,7 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
-import me.drepic.proton.message.MessageAttributes;
-import me.drepic.proton.message.MessageHandler;
+import me.drepic.proton.common.message.MessageAttributes;
+import me.drepic.proton.common.message.MessageHandler;
 import org.bukkit.Bukkit;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ public class RedisSendTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
         waiter.await(1000, 2);
     }
@@ -55,7 +55,7 @@ public class RedisSendTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
         // Wait for sync threads to get added to Bukkit from Jedis
         Thread.sleep(1000);
@@ -81,7 +81,7 @@ public class RedisSendTests extends RedisTests {
                 waiter.resume();
             }
         };
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
         // Wait for sync threads to get added to Bukkit from Redis
         Thread.sleep(1000);
@@ -106,8 +106,8 @@ public class RedisSendTests extends RedisTests {
             }
         };
 
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
-        client2ProtonManager.registerMessageHandlers(proton, client2Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
+        client2ProtonManager.registerMessageHandlers(client2Handler);
         client1ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
         Thread.sleep(500);
         waiter.await(1000, 1);
@@ -130,7 +130,7 @@ public class RedisSendTests extends RedisTests {
             }
         };
 
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, data, CLIENT_1_NAME);
         waiter.await(1000, 1);
     }
@@ -154,8 +154,8 @@ public class RedisSendTests extends RedisTests {
             }
         };
 
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
-        client2ProtonManager.registerMessageHandlers(proton, client2Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
+        client2ProtonManager.registerMessageHandlers(client2Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, COMMON_GROUP);
         waiter.await(1000, 2);
     }
@@ -178,8 +178,8 @@ public class RedisSendTests extends RedisTests {
             }
         };
 
-        client1ProtonManager.registerMessageHandlers(proton, client1Handler);
-        client2ProtonManager.registerMessageHandlers(proton, client2Handler);
+        client1ProtonManager.registerMessageHandlers(client1Handler);
+        client2ProtonManager.registerMessageHandlers(client2Handler);
         client2ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_GROUP);
         Thread.sleep(500);
         waiter.await(1000, 1);

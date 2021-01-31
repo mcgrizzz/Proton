@@ -1,4 +1,4 @@
-package me.drepic.proton;
+package me.drepic.proton.common;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -6,12 +6,14 @@ import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
-import me.drepic.proton.message.MessageContext;
-import me.drepic.proton.redis.RedisChannel;
-import me.drepic.proton.redis.RedisDataWrapper;
+import me.drepic.proton.common.adapters.SchedulerAdapter;
+import me.drepic.proton.common.message.MessageContext;
+import me.drepic.proton.common.redis.RedisChannel;
+import me.drepic.proton.common.redis.RedisDataWrapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class RedisManager extends ProtonManager {
 
@@ -25,16 +27,24 @@ public class RedisManager extends ProtonManager {
     StatefulRedisPubSubConnection<String, String> subConnection;
     StatefulRedisPubSubConnection<String, String> pubConnection;
 
-    protected RedisManager(String name, String[] groups, String host, int port, String password) {
-        super(name, groups);
+    protected RedisManager(Proton proton, String name, String[] groups, String host, int port, String password) {
+        super(proton, name, groups);
         this.host = host;
         this.port = port;
         this.password = password;
         this.connect();
     }
 
-    protected RedisManager(String name, String[] groups, String host, int port) {
-        this(name, groups, host, port, "");
+    protected RedisManager(SchedulerAdapter scheduler, Logger logger, String name, String[] groups, String host, int port, String password){
+        super(scheduler, logger, name, groups);
+        this.host = host;
+        this.port = port;
+        this.password = password;
+        this.connect();
+    }
+
+    protected RedisManager(Proton proton, String name, String[] groups, String host, int port) {
+        this(proton, name, groups, host, port, "");
     }
 
     @Override
