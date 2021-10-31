@@ -1,9 +1,14 @@
 version: 2.1
 
-orbs:
-  maven: circleci/maven@1.0.3
 
 jobs:
+  test:
+    docker:
+      - image: cimg/openjdk:17.0.0-node
+    steps:
+      - checkout
+      - run:
+          command: mvn test
   build:
     docker:
       - image: cimg/openjdk:17.0.0-node
@@ -50,10 +55,10 @@ workflows:
   version: 2
   main:
     jobs:
-      - maven/test
+      - test
       - build:
           requires:
-            - maven/test
+            - test
           filters:
              branches:
                only:
