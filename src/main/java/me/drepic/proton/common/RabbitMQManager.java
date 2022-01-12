@@ -68,7 +68,7 @@ public class RabbitMQManager extends ProtonManager {
         queueName = channel.queueDeclare().getQueue();
         channel.basicConsume(queueName, true, this::deliverCallback, consumerTag -> {});
 
-        getLogger().info(String.format("Connected as '%s' with id:%s\n", this.name, this.id.toString()));
+        getLogger().info(String.format("Connected as '%s' with id:%s", this.name, this.id.toString()));
     }
 
     protected void deliverCallback(String consumerTag, Delivery delivery) {
