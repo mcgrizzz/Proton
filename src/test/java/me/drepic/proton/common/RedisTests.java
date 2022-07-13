@@ -23,8 +23,8 @@ public class RedisTests {
     static final String[] CLIENT_2_GROUPS = {COMMON_GROUP, CLIENT_2_GROUP};
 
     static final String HOST = System.getenv("REDIS_HOST");
-    static final int PORT = 9949;
-    static final String PASSWORD = System.getenv("REDIS_PASSWORD");
+    static final int PORT = Integer.parseInt(System.getenv("REDIS_PORT"));
+    static final String PASSWORD = System.getenv("REDIS_PASS");
 
     static final String NAMESPACE = "test-namespace";
     static final String SUBJECT = "test-subject";

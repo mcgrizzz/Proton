@@ -15,6 +15,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__simpleAsyncValid() throws TimeoutException, InterruptedException {
         String myString = "testBroadcast__simpleAsyncValid";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(String recvStr) {
@@ -42,6 +43,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__simpleSyncValid() throws TimeoutException, InterruptedException {
         String myString = "testBroadcast__simpleSyncValid";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
             public void recv1(String recvStr) {
@@ -68,6 +70,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__mixedAsync() throws TimeoutException, InterruptedException {
         String myString = "testBroadcast__mixedAsync";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
             public void recv1(String recvStr) {
@@ -94,6 +97,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__multipleReceivers() throws Exception {
         String myString = "testBroadcast__multipleReceivers";
+        System.out.println("Running: " + myString);
         String client3Name = "client3";
         String[] client3Groups = {};
         ProtonManager client3ProtonManager = createManager(client3Name, client3Groups, HOST, VIRTUAL_HOST, PORT, USERNAME, PASSWORD);
@@ -114,6 +118,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__notToSender() throws InterruptedException, TimeoutException {
         String myString = "testBroadcast__notToSender";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(String recvStr) {
@@ -131,6 +136,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__notToWrongNamespace() throws InterruptedException, TimeoutException {
         String myString = "testBroadcast__notToWrongNamespace";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = "wrong-namespace", subject = SUBJECT, async = true)
             public void recv(String recvStr) {
@@ -148,6 +154,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__notToWrongSubject() throws InterruptedException, TimeoutException {
         String myString = "testBroadcast__notToWrongSubject";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = "wrong-subject", async = true)
             public void recv(String recvStr) {
@@ -164,6 +171,7 @@ class RabbitBroadcastTests extends RabbitTests {
 
     @Test
     public void testBroadcast__wrongTypeForRegisteredListener() {
+        System.out.println("Running: testBroadcast__wrongTypeForRegisteredListener");
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(String recvStr) {
@@ -178,6 +186,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__wrongTypeForUnknownListener() throws InterruptedException {
         String myString = "testBroadcast__wrongTypeForUnknownListener";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(int recvInt) {
@@ -191,6 +200,7 @@ class RabbitBroadcastTests extends RabbitTests {
 
     @Test
     public void testBroadcast__mismatchPrimitiveAndObject() throws TimeoutException, InterruptedException {
+        System.out.println("Running: testBroadcast__mismatchPrimitiveAndObject");
         Integer myInt = "testBroadcast__mismatchPrimitiveAndObject".hashCode();
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
@@ -207,6 +217,7 @@ class RabbitBroadcastTests extends RabbitTests {
     @Test
     public void testBroadcast__bothPrimitiveAndObject() throws TimeoutException, InterruptedException {
         Integer myInt = "testBroadcast__bothPrimitiveAndObject".hashCode();
+        System.out.println("Running: testBroadcast__bothPrimitiveAndObject");
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(int recvInt) {
@@ -227,6 +238,7 @@ class RabbitBroadcastTests extends RabbitTests {
 
     @Test
     public void testBroadcast__complicatedData() throws TimeoutException, InterruptedException {
+        System.out.println("Running: testBroadcast__complicatedData");
         ComplicatedData data = new ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a', 'b', 'c', 'd'));
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
