@@ -13,6 +13,7 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSend__simpleAsyncValid() throws TimeoutException, InterruptedException {
         String myString = "testSend__simpleAsyncValid";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv1(String recvStr) {
@@ -40,6 +41,7 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSend__simpleSyncValid() throws TimeoutException, InterruptedException {
         String myString = "testSend__simpleSyncValid";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
             public void recv1(String recvStr) {
@@ -66,6 +68,7 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSend__mixedAsync() throws TimeoutException, InterruptedException {
         String myString = "testSend__mixedAsync";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT)
             public void recv1(String recvStr) {
@@ -92,6 +95,7 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSend__onlyToSender() throws InterruptedException, TimeoutException {
         String myString = "testSend__onlyToSender";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(String recvStr) {
@@ -116,11 +120,13 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSend__noHandlerInRecipient() {
         String myString = "testSend__noHandlerInRecipient";
+        System.out.println("Running: " + myString);
         client1ProtonManager.send(NAMESPACE, SUBJECT, myString, CLIENT_1_NAME);
     }
 
     @Test
     public void testSend__complicatedData() throws TimeoutException, InterruptedException {
+        System.out.println("Running: testSend__complicatedData");
         ComplicatedData data = new ComplicatedData(1, 5.4f, "This is complicated", Arrays.asList('a', 'b', 'c', 'd'));
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
@@ -138,6 +144,7 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSendGroup__commonGroup() throws TimeoutException, InterruptedException {
         String myString = "testSendGroup__commonGroup";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(String recvData) {
@@ -163,6 +170,7 @@ class RabbitSendTests extends RabbitTests {
     @Test
     public void testSendGroup__differentGroup() throws TimeoutException, InterruptedException {
         String myString = "testSendGroup__differentGroup";
+        System.out.println("Running: " + myString);
         Object client1Handler = new Object() {
             @MessageHandler(namespace = NAMESPACE, subject = SUBJECT, async = true)
             public void recv(String recvData) {
